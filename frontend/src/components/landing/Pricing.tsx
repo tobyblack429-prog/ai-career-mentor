@@ -15,7 +15,7 @@ const FREE_FEATURES = [
   { text: "164 Company-Specific Interview Sim", highlight: false },
   { text: "Monaco Code Editor Sandbox", highlight: false },
   { text: "4 Role-Level Difficulty Tiers", highlight: false },
-  { text: "7-Phase Structured Interview", highlight: false },
+  { text: "10-Phase Structured Interview", highlight: false },
 ];
 
 const PRO_FEATURES = [

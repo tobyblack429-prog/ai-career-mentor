@@ -18,7 +18,7 @@ const FEATURES = [
   },
   {
     title: "Mock Interview Engine",
-    desc: "Interactive text-based interviews with real-time streaming feedback. Runs under a strict 7-phase FSM with an integrated coding sandbox.",
+    desc: "Interactive text-based interviews with real-time streaming feedback. Runs under a strict 10-phase FSM with an integrated coding sandbox.",
     icon: Code,
     color: "var(--brand)",
   },

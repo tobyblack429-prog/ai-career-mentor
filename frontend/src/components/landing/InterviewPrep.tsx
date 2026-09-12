@@ -37,14 +37,14 @@ export default function InterviewPrep() {
             Ace Your Next <span className="gradient-text">Interview</span>
           </h2>
           <p className="max-w-2xl mx-auto text-sm sm:text-base leading-relaxed" style={{ color: "var(--fg-secondary)" }}>
-            Face custom questions tailored to your resume and the role you&apos;re targeting. Real-time feedback across 7 assessment phases.
+            Face custom questions tailored to your resume and the role you&apos;re targeting. Real-time feedback across 10 assessment phases.
           </p>
         </div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           {[
-            { icon: Brain, title: "7-Phase Assessment", desc: "Tech stack, CS fundamentals, LeetCode, resume deep-dives, and system design — all structured.", color: "var(--accent-purple)" },
+            { icon: Brain, title: "10-Phase Assessment", desc: "Tech stack, CS fundamentals, LeetCode, resume deep-dives, and system design — all structured.", color: "var(--accent-purple)" },
             { icon: RefreshCcw, title: "Adaptive Questioning", desc: "The AI adapts on the fly — offering hints for wrong answers or digging deeper when you nail it.", color: "var(--accent-cyan)" },
             { icon: Sparkles, title: "Role-Tailored Personas", desc: "Face different AI interviewers: FAANG staff engineer, startup CTO, or culture-focused hiring manager.", color: "var(--brand)" },
           ].map((item, i) => (

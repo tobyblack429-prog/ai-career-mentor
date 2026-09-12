@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "How does the mock interview adapt to me?",
-    a: "The interview engine loads your resume from the database and tailors questions to your projects and experience. It runs a 7-phase assessment (intro, theory, coding, resume deep-dive, system design, business domain, closing) with 4 difficulty tiers (Intern/Fresher/Mid/Senior). You also get a built-in Monaco code editor for live coding challenges.",
+    a: "The interview engine loads your resume from the database and tailors questions to your projects and experience. It runs a 10-phase assessment (intro, theory, deep-dive, coding, complexity, resume deep-dive, LLD, HLD, business domain, closing) with 4 difficulty tiers (Intern/Fresher/Mid/Senior). You also get a built-in Monaco code editor for live coding challenges.",
   },
   {
     q: "Can I practice for specific companies?",

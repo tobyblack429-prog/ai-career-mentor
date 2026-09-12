@@ -29,6 +29,43 @@ def _get_openai_client(provider: str = "groq"):
     )
 
 
+# ── Provider rate-limit cooldowns (per-process, module-level) ────────────────
+_provider_cooldowns: dict[str, float] = {}
+
+
+def _is_under_cooldown(provider: str) -> bool:
+    """True if a provider is resting due to a recent 429 rate-limit hit."""
+    return time.time() < _provider_cooldowns.get(provider, 0.0)
+
+
+def _apply_provider_cooldown(provider: str, seconds: float = 25.0) -> None:
+    _provider_cooldowns[provider] = time.time() + seconds
+    logger.warning(f"[interview] Provider {provider} placed under {seconds}s cooldown (rate limit).")
+
+
+def _extract_rate_limit_wait_secs(exc: Exception) -> float:
+    """Parse the provider's 'try again in Xs' hint from a 429 response."""
+    import re
+    msg = str(exc)
+    if "429" not in msg and "rate" not in msg.lower():
+        return 0.0
+    match = re.search(r"try again in\s*([0-9.]+)\s*s", msg)
+    if match:
+        return min(float(match.group(1)) + 0.5, 30.0)
+    return 15.0 if "429" in msg else 0.0
+
+
+def _select_fallback_chain(provider: str, config_fallback: list[str]) -> list[str]:
+    """Order a provider-first fallback chain, skipping providers under cooldown."""
+    if provider and provider not in config_fallback:
+        chain = [provider] + config_fallback
+    elif provider:
+        chain = [provider] + [p for p in config_fallback if p != provider]
+    else:
+        chain = config_fallback
+    return [p for p in chain if not _is_under_cooldown(p)] or chain
+
+
 async def _safe_send_json_local(ws: WebSocket, payload: dict) -> bool:
     """Send JSON payload safely without throwing exceptions on closed sockets."""
     try:
@@ -224,6 +261,154 @@ async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_promp
             logger.warning(f"Failed to track LLM call: {e}")
 
     return full_response.strip()
+
+
+async def _generate_json_non_stream(
+    messages: list[dict],
+    system_prompt: str,
+    agent_name: str = "interview_evaluator",
+    provider: str = "groq",
+    max_tokens: int = 512,
+) -> dict | None:
+    """
+    Provider-fallback, non-streaming JSON call for evaluator/feedback.
+
+    Returns a parsed dict on success, None when all providers fail. Applies
+    per-provider rate-limit cooldowns so follow-up calls bypass the exhausted
+    provider.
+    """
+    agent_config = LLMConfigManager.get_agent_config(agent_name)
+    config_fallback = agent_config["fallback_chain"]
+
+    if provider and provider not in config_fallback:
+        chain = [provider] + config_fallback
+    elif provider:
+        chain = [provider] + [p for p in config_fallback if p != provider]
+    else:
+        chain = config_fallback
+
+    last_err: Exception | None = None
+
+    for provider_name in chain:
+        if _is_under_cooldown(provider_name):
+            continue
+        try:
+            client = _get_openai_client(provider_name)
+            if provider_name == "nvidia":
+                model_name = settings.NVIDIA_MODEL
+            elif provider_name in ("gemini", "google"):
+                model_name = settings.GOOGLE_MODEL
+            else:
+                model_name = agent_config["model"]
+
+            start_time = time.time()
+            resp = await client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "system", "content": system_prompt}] + messages,
+                response_format={"type": "json_object"},
+                temperature=config_fallback[0] and agent_config["temperature"] or 0.2,
+                max_tokens=max_tokens,
+            )
+            content = (resp.choices[0].message.content or "").strip()
+            latency = time.time() - start_time
+            input_chars = len(system_prompt) + sum(len(m.get("content", "")) for m in messages)
+            input_tokens = max(1, input_chars // 4)
+            output_tokens = max(1, len(content) // 4)
+            try:
+                track_llm_call(provider_name, latency, input_tokens, output_tokens)
+            except Exception as e:
+                logger.warning(f"Failed to track generate_json call: {e}")
+
+            if not content:
+                raise ValueError("JSON generator returned empty content")
+
+            import json
+            text = content.strip()
+            import re as _re2
+            m = _re2.search(r"```(?:json)?\s*(.*?)\s*```", text, _re2.DOTALL)
+            if m:
+                text = m.group(1).strip()
+            start_t, end_t = text.find("{"), text.rfind("}")
+            if start_t != -1 and end_t > start_t:
+                text = text[start_t : end_t + 1]
+            parsed = json.loads(text)
+            return parsed
+        except Exception as e:
+            msg_lower = str(e).lower()
+            if "429" in msg_lower or "rate" in msg_lower:
+                wait = _extract_rate_limit_wait_secs(e) or 15.0
+                _apply_provider_cooldown(provider_name, wait)
+            logger.warning(f"[interview] generate_json failed {provider_name}: {e}")
+            last_err = e
+
+    if last_err:
+        logger.error(f"[interview] All providers failed for JSON generator: {last_err}")
+    return None
+
+
+async def _generate_interview_text_non_stream(messages: list[dict], system_prompt: str, provider: str = "groq", max_tokens: int = 300) -> str:
+    """
+    Non-streaming interviewer generation — used for regeneration after guardrail
+    rejection. Nothing is pushed to the websocket here, so a bad first draft can
+    be replaced before the client ever sees the final frame.
+    """
+    interview_config = LLMConfigManager.get_agent_config("interview")
+    config_fallback = interview_config["fallback_chain"]
+
+    if provider and provider not in config_fallback:
+        fallback_chain = [provider] + config_fallback
+    elif provider:
+        fallback_chain = [provider] + [p for p in config_fallback if p != provider]
+    else:
+        fallback_chain = config_fallback
+
+    last_err = None
+    active_provider = None
+    start_time = time.time()
+
+    for provider_name in fallback_chain:
+        if _is_under_cooldown(provider_name):
+            continue
+        try:
+            client = _get_openai_client(provider_name)
+            if provider_name == "nvidia":
+                model_name = settings.NVIDIA_MODEL
+            elif provider_name in ("gemini", "google"):
+                model_name = settings.GOOGLE_MODEL
+            else:
+                model_name = interview_config["model"]
+
+            full_msgs = [{"role": "system", "content": system_prompt}] + messages
+            resp = await client.chat.completions.create(
+                model=model_name,
+                messages=full_msgs,
+                temperature=interview_config["temperature"],
+                max_tokens=max_tokens,
+            )
+            content = (resp.choices[0].message.content or "").strip()
+            active_provider = provider_name
+            if content:
+                latency = time.time() - start_time
+                input_tokens = max(1, (len(system_prompt) + sum(len(m.get("content", "")) for m in messages)) // 4)
+                output_tokens = max(1, len(content) // 4)
+                try:
+                    track_llm_call(active_provider, latency, input_tokens, output_tokens)
+                except Exception as e:
+                    logger.warning(f"Failed to track non-stream interview call: {e}")
+                return content
+
+            last_err = ValueError("Empty regeneration content")
+        except Exception as e:
+            msg_lower = str(e).lower()
+            if "429" in msg_lower or "rate" in msg_lower:
+                wait = _extract_rate_limit_wait_secs(e) or 15.0
+                _apply_provider_cooldown(provider_name, wait)
+            logger.warning(f"[interview] Non-stream interview failed for {provider_name}: {e}")
+            last_err = e
+
+    if last_err:
+        raise last_err
+    raise RuntimeError("All providers failed to regenerate interviewer text.")
 
 
 async def _generate_feedback_non_stream(messages: list[dict], system_prompt: str, provider: str = "groq") -> str:

@@ -80,6 +80,8 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
     const [isThinking, setIsThinking] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [questionCount, setQuestionCount] = useState(0);
+    const [totalQuestions, setTotalQuestions] = useState(10);
+    const [phaseName, setPhaseName] = useState("");
     const [status, setStatus] = useState("Initializing...");
     const [showEndModal, setShowEndModal] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
@@ -235,7 +237,19 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                 }
                 setIsThinking(false);
             } else if (data.role === "interviewer") {
-                if (data.type === "question") setQuestionCount(p => p + 1);
+                if (data.type === "question" || data.type === "concluding") {
+                    if (typeof data.question_number === "number") {
+                        setQuestionCount(data.question_number);
+                    } else {
+                        setQuestionCount(p => p + 1);
+                    }
+                    if (typeof data.total_questions === "number") {
+                        setTotalQuestions(data.total_questions);
+                    }
+                    if (data.phase_name) {
+                        setPhaseName(data.phase_name);
+                    }
+                }
                 if (data.type === "feedback") {
                     const scoreMatch = data.content.match(/OVERALL SCORE\s*:\s*(\d+)/i);
                     if (scoreMatch) finalScoreRef.current = parseInt(scoreMatch[1]);
@@ -557,7 +571,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                             <MessageSquare size={15} style={{ color: "var(--brand)" }} />
                             <span style={{ fontWeight: 600, color: "var(--fg-primary)", fontSize: "0.875rem" }}>Interview Record</span>
                         </div>
-                        <span className="badge badge-brand">{questionCount} / 7</span>
+                        <span className="badge badge-brand">{Math.min(questionCount, totalQuestions)} / {totalQuestions}</span>
                     </div>
 
                     <div ref={messageFeedRef} data-lenis-prevent className="custom-scrollbar" style={{
@@ -629,10 +643,23 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                             }}>
                                 <Target size={16} style={{ color: "var(--brand)" }} />
                             </div>
-                            <div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: "0.65rem", color: "var(--fg-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Progress</div>
                                 <div style={{ fontSize: "1rem", color: "var(--fg-primary)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                                    Q {questionCount}/7
+                                    Q {Math.min(questionCount, totalQuestions)}/{totalQuestions}
+                                </div>
+                                {phaseName && (
+                                    <div style={{ fontSize: "0.7rem", color: "var(--brand)", fontWeight: 500, marginTop: "1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={phaseName}>
+                                        {phaseName}
+                                    </div>
+                                )}
+                                <div style={{ width: "100%", height: "3px", background: "rgba(255,255,255,0.08)", borderRadius: "2px", marginTop: "5px", overflow: "hidden" }}>
+                                    <div style={{
+                                        width: `${Math.min(Math.round((questionCount / totalQuestions) * 100), 100)}%`,
+                                        height: "100%",
+                                        background: "linear-gradient(90deg, var(--brand) 0%, var(--accent-cyan) 100%)",
+                                        transition: "width 0.4s ease"
+                                    }} />
                                 </div>
                             </div>
                         </div>
@@ -664,7 +691,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                 onKeyDown={handleKeyDown}
                                 onWheel={(e) => e.stopPropagation()}
                                 onTouchMove={(e) => e.stopPropagation()}
-                                placeholder={isSessionOver ? "Interview concluding..." : "Type your answer here..."}
+                                placeholder={isSessionOver ? "Interview concluding..." : questionCount >= totalQuestions ? "Ask the interviewer any questions about the company or team..." : "Type your answer here..."}
                                 data-lenis-prevent
                                 className="custom-scrollbar"
                                 style={{

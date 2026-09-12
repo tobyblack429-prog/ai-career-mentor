@@ -22,7 +22,7 @@ const STEPS = [
     number: "03",
     icon: BarChart,
     title: "Get Your Unified Career Plan",
-    desc: "Receive a complete report: ATS optimization tips, 8-week RAG roadmap with curated resources, location-aware salary benchmarks, LinkedIn headline strategy, and a 7-phase mock interview scorecard.",
+    desc: "Receive a complete report: ATS optimization tips, 8-week RAG roadmap with curated resources, location-aware salary benchmarks, LinkedIn headline strategy, and a 10-phase mock interview scorecard.",
     color: "var(--accent-emerald)",
     details: ["All 5 agents in one report", "Saved to your dashboard", "Track progress over time"],
   },
@@ -33,7 +33,7 @@ const PIPELINE = [
   { icon: Map, label: "Roadmap Builder", sub: "8-week RAG syllabus", color: "var(--accent-purple)" },
   { icon: TrendingUp, label: "Market Explorer", sub: "Live salary & job data", color: "var(--accent-cyan)" },
   { icon: Target, label: "LinkedIn SEO", sub: "Headline & keyword strategy", color: "var(--accent-emerald)" },
-  { icon: MessageSquare, label: "Mock Interview", sub: "7-phase FSM + Monaco editor", color: "var(--accent-rose)" },
+  { icon: MessageSquare, label: "Mock Interview", sub: "10-phase FSM + Monaco editor", color: "var(--accent-rose)" },
 ];
 
 export default function HowItWorks() {
@@ -134,7 +134,7 @@ export default function HowItWorks() {
             border: "1px solid var(--border-subtle)"
           }}>
             <p className="text-xs font-bold" style={{ color: "var(--fg-muted)" }}>
-              <span style={{ color: "var(--accent-purple)" }}>Parallel Agent DAG</span> — Resume + Market fan-out concurrently, then LinkedIn + Roadmap fan-in. Total latency: ~60s instead of ~4min sequential. Mock Interview runs independently via WebSocket with a 7-phase FSM.
+              <span style={{ color: "var(--accent-purple)" }}>Parallel Agent DAG</span> — Resume + Market fan-out concurrently, then LinkedIn + Roadmap fan-in. Total latency: ~60s instead of ~4min sequential. Mock Interview runs independently via WebSocket with a 10-phase FSM.
             </p>
           </div>
         </div>

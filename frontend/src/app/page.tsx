@@ -17,7 +17,7 @@ const JSON_LD = {
   "@type": "SoftwareApplication",
   name: "CareerMentor.ai",
   description:
-    "AI-powered career platform with resume ATS auditing, personalized learning roadmaps, live market salary data, LinkedIn SEO optimization, and 7-phase mock interviews.",
+    "AI-powered career platform with resume ATS auditing, personalized learning roadmaps, live market salary data, LinkedIn SEO optimization, and 10-phase mock interviews.",
   url: "https://ai-career-mentor-anil.vercel.app",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
@@ -37,7 +37,7 @@ const JSON_LD = {
     "Personalized Learning Roadmaps",
     "Live Market Salary Intelligence",
     "LinkedIn Profile SEO Optimization",
-    "7-Phase Mock Interview Engine",
+    "10-Phase Mock Interview Engine",
     "Full Career Analysis Pipeline",
   ],
 };

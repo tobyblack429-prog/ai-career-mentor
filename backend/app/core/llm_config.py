@@ -91,6 +91,14 @@ AGENT_PROFILES = {
         "default_temperature": 0.6,
         "fallback_chain": ["groq", "nvidia"],
     },
+    "interview_evaluator": {
+        "env_prefix": "AGENT_INTERVIEW_EVALUATOR",
+        "capability": "structured_json",
+        "default_provider": "groq",
+        "default_model": "openai/gpt-oss-120b",
+        "default_temperature": 0.2,
+        "fallback_chain": ["groq", "nvidia"],
+    },
 }
 
 

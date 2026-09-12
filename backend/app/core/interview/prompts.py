@@ -234,7 +234,7 @@ def _build_interview_system_prompt(
         CATEGORY_PHASES = {
             "swe": {
                 "p4_desc": "Project Deep-Dive (Identify exactly ONE strong project from candidate's resume, select exactly TWO specific achievements or bullet points from it, and ask candidate to explain the architecture, implementation details, and technical decisions behind those components).",
-                "p5_desc": f"Low-Level Design (LLD) & API Design (Ask the candidate to design it from a low-level perspective: defining API endpoints, database schemas, object-oriented class structure, and design patterns for: {system_design_scenario}).",
+                "p5_desc": f"Low-Level Design (LLD) & API System Design (Ask the candidate to design it from a low-level perspective: defining API endpoints, database schemas, object-oriented class structure, and design patterns for: {system_design_scenario}).",
                 "p6_desc": f"Real-life Domain of the Company's Solution (Present a highly realistic, domain-specific business problem and technical solution scenario based on the actual business model, products, or operations of {company} — e.g. for FAANG: global scaling, sub-millisecond latency, distributed systems; for Fintech: transactions integrity, compliance, fraud engines. Ask the candidate how they would design a solution using their role's expertise, focusing on practical constraints and technical trade-offs).",
             },
             "data_ai": {
@@ -273,23 +273,29 @@ def _build_interview_system_prompt(
 
         if resume_summary:
             flow_phases = (
-                f"Phase 1: Introduction (Introduce yourself briefly — first name + role at {company}. Then welcome {candidate_name} warmly by name, confirm they are applying for the {role} role, and ask them to introduce themselves: 'Tell me about yourself' — name, background, education, key skills, professional experience, and projects. This is a PURE introduction opener like a real interviewer. Do NOT ask which area they enjoy most and do NOT dive into technical questions yet).\n"
-                f"Phase 2: {p2_name}. You MUST ask a question specifically on one of these core subjects: {fundamental_focus}.\n"
-                f"{p3_desc}\n"
-                f"Phase 4: {cat_phases['p4_desc']}\n"
-                f"Phase 5: {cat_phases['p5_desc']}\n"
-                f"Phase 6: {cat_phases['p6_desc']}\n"
-                "Phase 7: Closing - Do you have any questions for me?"
+                f"Question 1 (Phase 1): Introduction & Background (Introduce yourself briefly — first name + role at {company}. Then welcome {candidate_name} warmly by name, confirm they are applying for the {role} role, and ask them to introduce themselves: 'Tell me about yourself' — name, background, education, key skills, professional experience, and projects. Do NOT dive into technical questions yet).\n"
+                f"Question 2 (Phase 2): {p2_name} (Core Domain Fundamentals). You MUST ask a question specifically on one of these core subjects: {fundamental_focus}.\n"
+                f"Question 3 (Phase 3): Fundamentals Deep-Dive & Edge Cases. Probe deeper into the previous concept, asking about edge cases, concurrency, memory, or architectural trade-offs.\n"
+                f"Question 4 (Phase 4): {p3_desc}\n"
+                f"Question 5 (Phase 5): Complexity & Scale Optimization. Ask the candidate to analyze the time and space complexity of their challenge solution and optimize it for high throughput or low memory.\n"
+                f"Question 6 (Phase 6): {cat_phases['p4_desc']}\n"
+                f"Question 7 (Phase 7): {cat_phases['p5_desc']}\n"
+                f"Question 8 (Phase 8): High-Level System Architecture & Scale (Ask how to scale the design to millions of daily requests, covering distributed caching, sharding, and failover).\n"
+                f"Question 9 (Phase 9): {cat_phases['p6_desc']}\n"
+                "Question 10 (Phase 10): Closing & Candidate Q&A (Ask: 'That covers all my questions for today. Before we wrap up — do you have any questions for me about the team, tech stack, or the company?')"
             )
         else:
             flow_phases = (
-                f"Phase 1: Introduction (Introduce yourself briefly — first name + role at {company}. Then welcome {candidate_name} warmly by name, confirm they are applying for the {role} role, and ask them to introduce themselves: 'Tell me about yourself' — name, background, education, key skills, and projects they have worked on. This is a PURE introduction opener like a real interviewer. Do NOT dive into technical questions yet).\n"
-                f"Phase 2: {p2_name}. You MUST ask a question specifically on one of these core subjects: {fundamental_focus}.\n"
-                f"{p3_desc}\n"
-                f"Phase 4: {cat_phases['p4_desc']}\n"
-                f"Phase 5: {cat_phases['p5_desc']}\n"
-                f"Phase 6: {cat_phases['p6_desc']}\n"
-                "Phase 7: Closing - Do you have any questions for me?"
+                f"Question 1 (Phase 1): Introduction & Background (Introduce yourself briefly — first name + role at {company}. Then welcome {candidate_name} warmly by name, confirm they are applying for the {role} role, and ask them to introduce themselves: 'Tell me about yourself' — name, background, education, key skills, and projects. Do NOT dive into technical questions yet).\n"
+                f"Question 2 (Phase 2): {p2_name} (Core Domain Fundamentals). You MUST ask a question specifically on one of these core subjects: {fundamental_focus}.\n"
+                f"Question 3 (Phase 3): Fundamentals Deep-Dive & Edge Cases. Probe deeper into the previous concept, asking about edge cases, concurrency, memory, or architectural trade-offs.\n"
+                f"Question 4 (Phase 4): {p3_desc}\n"
+                f"Question 5 (Phase 5): Complexity & Scale Optimization. Ask the candidate to analyze the time and space complexity of their challenge solution and optimize it for high throughput or low memory.\n"
+                f"Question 6 (Phase 6): {cat_phases['p4_desc']}\n"
+                f"Question 7 (Phase 7): {cat_phases['p5_desc']}\n"
+                f"Question 8 (Phase 8): High-Level System Architecture & Scale (Ask how to scale the design to millions of daily requests, covering distributed caching, sharding, and failover).\n"
+                f"Question 9 (Phase 9): {cat_phases['p6_desc']}\n"
+                "Question 10 (Phase 10): Closing & Candidate Q&A (Ask: 'That covers all my questions for today. Before we wrap up — do you have any questions for me about the team, tech stack, or the company?')"
             )
     else:
         mode_instructions = (
@@ -315,13 +321,16 @@ def _build_interview_system_prompt(
         behavioral_challenge = local_random.choice(BEHAVIORAL_SCENARIOS_CHALLENGES)
 
         flow_phases = (
-            "Phase 1: Deep Introduction - Tell me About Yourself. Use this to determine if they are a fresher or experienced.\n"
-            "Phase 2: Motivation - 'Why do you want to work here?' or 'Why are you interested in this role?'\n"
-            f"Phase 3: Core Competency & Topic. You MUST ask a question specifically on: {fundamental_focus}.\n"
-            f"Phase 4: Teamwork/Conflict. You MUST ask a question specifically about: {behavioral_teamwork}.\n"
-            f"Phase 5: Challenges/Mistakes. You MUST ask a question specifically about: {behavioral_challenge}.\n"
-            "Phase 6: offer and relocation - Salary expectations, relocation.\n"
-            "Phase 7: Closing - Do you have any questions for me?."
+            "Question 1 (Phase 1): Introduction & Elevator Pitch — Tell me about yourself.\n"
+            f"Question 2 (Phase 2): Motivation & Company Fit — Why {company}, and why this {role} position?\n"
+            f"Question 3 (Phase 3): Core Competency & Key Strengths — Focus on: {fundamental_focus}.\n"
+            f"Question 4 (Phase 4): Teamwork & Collaboration — Ask specifically about: {behavioral_teamwork}.\n"
+            "Question 5 (Phase 5): Conflict Resolution — Disagreement over an engineering or design decision.\n"
+            f"Question 6 (Phase 6): Handling Failure / Critical Mistakes — Ask specifically about: {behavioral_challenge}.\n"
+            "Question 7 (Phase 7): High-Pressure Delivery & Tight Deadlines — Handling shifting requirements.\n"
+            "Question 8 (Phase 8): Leadership, Mentorship & Ownership — Driving an ambiguous project.\n"
+            "Question 9 (Phase 9): Career Aspirations, Work Culture & Relocation preferences.\n"
+            "Question 10 (Phase 10): Closing & Candidate Q&A — 'Do you have any questions for me about the team or company?'"
         )
 
     resume_instruction = ""
@@ -337,11 +346,13 @@ def _build_interview_system_prompt(
             "Do not ask about skills they do not have unless exploring adjacent areas."
         )
 
+    company_context = f"\nCOMPANY INTERVIEW STYLE & DOMAIN FOCUS: {company_style}" if company_style else ""
+
     return (
         f"You are a Senior Interviewer at {company} conducting a {interview_type.upper()} mock interview for a {role} role.\n\n"
         f"YOUR PERSONA: You behave as {interviewer_persona}.\n\n"
         f"INTERVIEW MODE: {interview_type.upper()}\n"
-        f"Tier/Category: {company_tier}\n"
+        f"TARGET COMPANY: {company} (Tier/Category: {company_tier}){company_context}\n"
         f"Difficulty: {difficulty_level}\n"
         f"Session Token: {seed_token}\n"
         f"INSTRUCTION: Ensure this session is fresh and highly customized. Ask unique, variant questions. Do not repeat typical template questions.\n\n"
@@ -355,29 +366,27 @@ def _build_interview_system_prompt(
         "ADAPTIVE QUESTIONING (INTELLIGENT RECURSION):\n"
         "- If the candidate gives a weak/wrong answer, ask a simpler follow-up or provide a gentle hint before moving on.\n"
         "- If the candidate gives a strong answer, dive deeper into constraints, edge cases, or optimization.\n\n"
-        f"INTERVIEW FLOW:\n{flow_phases}\n\n"
+        f"INTERVIEW FLOW (10 QUESTIONS TOTAL):\n{flow_phases}\n\n"
         "Remember: You are the interviewer. First provide a brief, direct review/feedback (1-2 sentences) evaluating the candidate's previous response, then ask the NEXT question, and then STOP."
     )
 
 
-def _build_feedback_system_prompt(role: str, company: str, interview_type: str = "technical", role_level: str = "fresher") -> str:
+def build_scoring_rubric(role: str, interview_type: str = "technical", role_level: str = "fresher") -> str:
+    """Rubric block shared by the legacy markdown feedback and the structured report.
+
+    Single source of truth so the two feedback paths never drift from each other.
+    """
     category = get_role_category(role)
-    
+
     if interview_type == "technical":
-        if category == "swe":
-            rubric_details = "Flawless code logic, optimal space/time complexity, sound algorithm choice, and clean code structure."
-        elif category == "data_ai":
-            rubric_details = "Strong statistical understanding, mathematically correct modeling assumptions, sound evaluation metrics choice, and pipeline scalability."
-        elif category == "infra_cloud":
-            rubric_details = "Highly available cloud architecture design, correct container orchestration strategies, sound IaC practices, and network topology correctness."
-        elif category == "security":
-            rubric_details = "Accurate threat modeling, zero-trust patterns, OWASP vulnerability mitigations, key exchange protocols correctness, and incident recovery logic."
-        elif category == "product_design":
-            rubric_details = "Clear product metrics prioritization, correct roadmapping frameworks (RICE), accessibility (WCAG), and sound monetization/conversion strategies."
-        elif category == "gaming":
-            rubric_details = "Frame-rate independence principles, sound collision checking algorithms, optimal netcode/lag compensation, and strict memory/GC allocation hygiene."
-        else:
-            rubric_details = "Domain-specific protocol correctness, hardware/testing design compliance, and sound system integration methodology."
+        rubric_details = {
+            "swe": "Flawless code logic, optimal space/time complexity, sound algorithm choice, and clean code structure.",
+            "data_ai": "Strong statistical understanding, mathematically correct modeling assumptions, sound evaluation metrics choice, and pipeline scalability.",
+            "infra_cloud": "Highly available cloud architecture design, correct container orchestration strategies, sound IaC practices, and network topology correctness.",
+            "security": "Accurate threat modeling, zero-trust patterns, OWASP vulnerability mitigations, key exchange protocols correctness, and incident recovery logic.",
+            "product_design": "Clear product metrics prioritization, correct roadmapping frameworks (RICE), accessibility (WCAG), and sound monetization/conversion strategies.",
+            "gaming": "Frame-rate independence principles, sound collision checking algorithms, optimal netcode/lag compensation, and strict memory/GC allocation hygiene.",
+        }.get(category, "Domain-specific protocol correctness, hardware/testing design compliance, and sound system integration methodology.")
 
         # Adjust scoring rubric based on role_level — freshers/interns get a lenient bar
         if role_level in ("intern", "fresher"):
@@ -417,6 +426,12 @@ def _build_feedback_system_prompt(role: str, company: str, interview_type: str =
                 "- 50-74: Needs improvement. Vague answers, struggled to articulate past experiences, or weak motivation.\n"
                 "- 0-49: Reject. Poor attitude, red flags in teamwork/conflict, or failed to answer basic HR questions.\n"
             )
+
+    return scoring_rubric
+
+
+def _build_feedback_system_prompt(role: str, company: str, interview_type: str = "technical", role_level: str = "fresher") -> str:
+    scoring_rubric = build_scoring_rubric(role, interview_type, role_level)
 
     return (
         f"You are a Senior Hiring Manager at {company}. Evaluate this {interview_type.upper()} interview transcript for a {role} position.\n\n"

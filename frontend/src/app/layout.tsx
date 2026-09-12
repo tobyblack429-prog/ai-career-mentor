@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | CareerMentor.ai",
   },
   description:
-    "Free AI-powered career platform with resume ATS auditing, personalized learning roadmaps, live market salary data, LinkedIn SEO optimization, and 7-phase mock interviews — all in one place.",
+    "Free AI-powered career platform with resume ATS auditing, personalized learning roadmaps, live market salary data, LinkedIn SEO optimization, and 10-phase mock interviews — all in one place.",
   keywords: [
     "AI career mentor",
     "resume ATS scorer",
