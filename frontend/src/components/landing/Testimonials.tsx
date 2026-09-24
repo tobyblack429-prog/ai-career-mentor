@@ -5,7 +5,7 @@ const TESTIMONIALS = [
   {
     name: "Priya Sharma",
     role: "SDE-2 at Amazon",
-    text: "CareerMentor's ATS audit found 14 keyword gaps in my resume. After fixing them, I got callbacks from 3 FAANG companies in one week.",
+    text: "The ATS audit in 我的职业规划ai导师 found 14 keyword gaps in my resume. After fixing them, I got callbacks from 3 FAANG companies in one week.",
     rating: 5,
     color: "var(--brand)",
   },
@@ -39,7 +39,7 @@ export default function Testimonials() {
             Loved by <span className="gradient-text">Developers</span>
           </h2>
           <p className="max-w-xl mx-auto text-sm sm:text-base leading-relaxed" style={{ color: "var(--fg-secondary)" }}>
-            Real results from developers who used CareerMentor to land their dream roles
+            Real results from developers who used 我的职业规划ai导师 to land their dream roles
           </p>
         </div>
 

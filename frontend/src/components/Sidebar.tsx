@@ -57,11 +57,10 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-3 pt-4 pb-3">
         <Link href="/" className="flex items-center gap-2.5 no-underline" style={{ padding: "6px 8px" }}>
-          <img src="/icon.svg" alt={locale === "zh" ? "职业导师" : "CareerMentor.ai"} className="w-8 h-8 object-contain shrink-0" />
+          <img src="/brand-icon.png" alt="我的职业规划ai导师" className="w-9 h-9 rounded-lg object-contain shrink-0 bg-white" />
           <div className="flex flex-col">
             <span className="font-display font-semibold" style={{ fontSize: "0.8125rem", color: "var(--fg-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-              {locale === "zh" ? "职业导师" : "CareerMentor"}
-              {locale === "en" && <span style={{ color: "var(--brand)" }}>.ai</span>}
+              我的职业规划ai导师
             </span>
             <span style={{ fontSize: "0.625rem", color: "var(--fg-muted)", letterSpacing: "0.04em", lineHeight: 1.2 }}>
               {t("AI Career Coach")}

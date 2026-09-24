@@ -1,10 +1,12 @@
 <div align="center">
 
-<a href="https://ai-career-mentor-anil.vercel.app">
-  <img src="./frontend/public/icon.svg" alt="CareerMentor.ai Logo" width="110" height="110" style="border-radius: 28px; filter: drop-shadow(0 0 35px rgba(99, 102, 241, 0.55)); margin-bottom: 8px;" />
+<a href="https://github.com/tobyblack429-prog/ai-career-mentor">
+  <img src="./frontend/public/brand-icon.png" alt="我的职业规划ai导师图标" width="110" height="110" style="border-radius: 28px; filter: drop-shadow(0 0 35px rgba(99, 102, 241, 0.55)); margin-bottom: 8px;" />
 </a>
 
-# 🚀 **CAREERMENTOR.AI**
+# 🚀 **我的职业规划ai导师**
+> 本分支的展示名称与图标已更新。使用方法见 [本地启动说明](./本地启动说明.md)。
+> 对外部署时请设置 `NEXT_PUBLIC_SITE_URL` 为正式网址，供分享预览和站点地图使用。
 ### ✦ *Autonomous Multi-Agent AI Career Strategist & Live Technical Interview Co-Pilot* ✦
 
 <p align="center">
@@ -12,10 +14,9 @@
 </p>
 
 <!-- Quick Action Badges -->
-[![🚀 Live Demo](https://img.shields.io/badge/⚡_Live_Web_App-ai--career--mentor-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://ai-career-mentor-anil.vercel.app)
-[![⚙️ Swagger API Docs](https://img.shields.io/badge/📖_FastAPI_Docs-Swagger_UI-10b981?style=for-the-badge&logo=fastapi&logoColor=white)](https://ai-career-mentor-rrpu.onrender.com/docs)
+[![项目代码](https://img.shields.io/badge/GitHub-项目代码-6366f1?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tobyblack429-prog/ai-career-mentor)
 [![📐 Architecture](https://img.shields.io/badge/🏗️_Architecture-5--Tier_DAG-8b5cf6?style=for-the-badge&logo=diagramsdotnet&logoColor=white)](./documentation/ARCHITECTURE.md)
-[![🧪 Pytest Suite](https://img.shields.io/badge/Automated_Tests-113_Passing-3b82f6?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/Anil-Pradhan-web/ai-career-mentor)
+[![🧪 Pytest Suite](https://img.shields.io/badge/Pytest-测试说明-3b82f6?style=for-the-badge&logo=pytest&logoColor=white)](./backend/tests)
 [![📄 License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](./LICENSE)
 
 <br/>
@@ -82,7 +83,7 @@
 
 | # | Section | 🔗 |
 |---|---------|-----|
-| 1 | [🧭 What is AI CAREER MENTOR?](#what-is-ai-career-mentor) | Project Overview |
+| 1 | [🧭 项目介绍](#-项目介绍) | Project Overview |
 | 2 | [❗ The Problem](#the-problem-career-transitions-are-broken) | Problem Statement & Pain Points |
 | 3 | [🎯 Who Faces This Problem?](#who-faces-this-problem) | Target Audience |
 | 4 | [🏆 Competitive Landscape](#competitive-landscape-what-exists-today) | Market Analysis & Tool Comparison |
@@ -103,9 +104,9 @@
 ---
 
 <a id="what-is-ai-career-mentor"></a>
-## 🧭 **What is AI CAREER MENTOR?**
+## 🧭 项目介绍
 
-**AI CAREER MENTOR** is an open-source, production-grade **Career Orchestration Operating System** 🤖 engineered to solve the systemic fragmentation in tech hiring. Built using **LangGraph Multi-Agent Orchestration**, **Vector-Search RAG (ChromaDB)**, and **Full-Duplex WebSockets**, it unifies the entire career transition lifecycle into **2 Core Interconnected Pillars**:
+**我的职业规划ai导师** is an open-source, production-grade **Career Orchestration Operating System** 🤖 engineered to solve the systemic fragmentation in tech hiring. Built using **LangGraph Multi-Agent Orchestration**, **Vector-Search RAG (ChromaDB)**, and **Full-Duplex WebSockets**, it unifies the entire career transition lifecycle into **2 Core Interconnected Pillars**:
 
 1. **🧠 Pillar 1: Full Career Analysis Orchestrator** — A parallel LangGraph DAG that chains Resume ATS Auditing, 8-Week RAG Roadmap Generation, Live Market Intelligence Scraping, and LinkedIn SEO Optimization in ~60 seconds.
 2. **🎤 Pillar 2: Streaming Technical Mock Interviewer** — A 7-Phase Finite State Machine (FSM) running real-time WebSocket interview simulations with Monaco Code Sandbox execution, 4 role levels (Intern/Fresher/Mid/Senior), 164 company profiles, category-specific phases 4–6, and level-aware automated performance scorecards.
@@ -182,7 +183,7 @@ Our market research highlights a severe structural disconnect between how develo
 <a id="who-faces-this-problem"></a>
 ## 🎯 **Who Faces This Problem?**
 
-| 👤 Candidate Persona | 😰 Specific Pain Point | 🚀 How AI Career Mentor Solves It |
+| 👤 Candidate Persona | 😰 Specific Pain Point | 🚀 How 我的职业规划ai导师 Solves It |
 |:---|:---|:---|
 | **🎓 Fresh CS Graduates** | Have strong theoretical fundamentals but struggle with ATS resume screening and lack industry skill clarity. | **Deterministic ATS Audit + RAG Roadmap** pinpoints exact keyword gaps and generates an 8-week actionable project syllabus. |
 | **💻 Self-Taught & Bootcamp Developers** | Possess coding skills but lack exposure to production engineering, system design, and test-driven development. | **7-Phase FSM Mock Interviewer** tests system design, CS theory, and coding with real-time feedback scoring. |
@@ -201,15 +202,15 @@ Our market research highlights a severe structural disconnect between how develo
 | **Roadmap.sh** | Free | ❌ | ✅ Static Only | ❌ | ❌ | ❌ | ❌ |
 | **Levels.fyi** | Free / Paid | ❌ | ❌ | ✅ Salary Only | ❌ | ❌ | ❌ |
 | **Interviewing.io** | $179–$300/sess | ❌ | ❌ | ❌ | ❌ | ✅ Human Expert | ❌ |
-| 🚀 **AI CAREER MENTOR** | **100% Free & Open Source** | ✅ **Hybrid ATS + LLM** | ✅ **8-Week RAG Syllabus** | ✅ **Live Scraper** | ✅ **Resume-Aware** | ✅ **7-Phase FSM + Role Levels** | ✅ **LangGraph DAG Memory** |
+| 🚀 **我的职业规划ai导师** | **100% Free & Open Source** | ✅ **Hybrid ATS + LLM** | ✅ **8-Week RAG Syllabus** | ✅ **Live Scraper** | ✅ **Resume-Aware** | ✅ **7-Phase FSM + Role Levels** | ✅ **LangGraph DAG Memory** |
 
-> 💡 **The Unified Context Advantage:** Existing tools operate in silos. In **AI CAREER MENTOR**, your resume analysis automatically informs your roadmap skill gaps, your market research tunes your learning priorities, and your mock interviewer asks questions directly about YOUR projects.
+> 💡 **The Unified Context Advantage:** Existing tools operate in silos. In **我的职业规划ai导师**, your resume analysis automatically informs your roadmap skill gaps, your market research tunes your learning priorities, and your mock interviewer asks questions directly about YOUR projects.
 
 ---
 
-### 💡 **How AI CAREER MENTOR Uniquely Solves This**
+### 💡 **How 我的职业规划ai导师 Uniquely Solves This**
 
-AI Career Mentor unifies all career transition needs into **2 Core Interconnected Pillars**:
+我的职业规划ai导师 unifies all career transition needs into **2 Core Interconnected Pillars**:
 
 ```text
                       ┌──────────────────────────────────────────┐
@@ -250,7 +251,7 @@ AI Career Mentor unifies all career transition needs into **2 Core Interconnecte
 
 Traditional career transitions are exhausting. Developers waste months reading disjointed roadmaps, guessing ATS keywords, analyzing salary benchmarks, and practicing mock interviews with static cards. 
 
-**AI CAREER MENTOR automates this entire lifecycle into 2 streamlined pillars:**
+**我的职业规划ai导师 automates this entire lifecycle into 2 streamlined pillars:**
 
 ```text
   ┌───────────────────────────────────────────────────────────────┐
@@ -540,7 +541,7 @@ Enter your target role, paste your resume text, and select your location → the
 
 ### 🛡️ **Enterprise-Grade Admin & Telemetry**
 
-In addition to developer-facing features, AI CAREER MENTOR includes a premium dashboard for real-time telemetry, allowing administrators to monitor platform health and token costs at scale:
+In addition to developer-facing features, 我的职业规划ai导师 includes a premium dashboard for real-time telemetry, allowing administrators to monitor platform health and token costs at scale:
 
 | # | 🚦 Infrastructure | 🚇 Transport | ⚙️ Engine | 🎯 What It Does |
 |---|------------------|-------------|-----------|-----------------|
@@ -586,10 +587,10 @@ In addition to developer-facing features, AI CAREER MENTOR includes a premium da
 > 📐 **Full architecture diagrams and detailed component maps** → See [**ARCHITECTURE.md**](./documentation/ARCHITECTURE.md)
 
 <div align="center">
-  <img src="./assets/ai-carre-mentor-architecture.png" alt="AI Career Mentor System Architecture Diagram" width="100%" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 60px rgba(139,92,246,0.15); margin-top: 12px; margin-bottom: 20px;">
+  <img src="./assets/ai-carre-mentor-architecture.png" alt="我的职业规划ai导师系统架构图" width="100%" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 60px rgba(139,92,246,0.15); margin-top: 12px; margin-bottom: 20px;">
 </div>
 
-AI CAREER MENTOR is engineered as a **5-Tier Decoupled System Architecture** designed for high concurrency, real-time WebSocket state management, and parallel multi-agent LLM orchestration. Below is the **complete end-to-end architecture** — from the user's browser all the way down to the LLM providers, vector store, and databases:
+我的职业规划ai导师 is engineered as a **5-Tier Decoupled System Architecture** designed for high concurrency, real-time WebSocket state management, and parallel multi-agent LLM orchestration. Below is the **complete end-to-end architecture** — from the user's browser all the way down to the LLM providers, vector store, and databases:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -835,7 +836,7 @@ The project is fully containerized, leveraging optimized multi-stage Dockerfiles
 <a id="seo--google-search-console"></a>
 ## 🔍 **SEO & Google Search Console**
 
-AI CAREER MENTOR ships with a production-ready SEO layer, generating a dynamic sitemap, `robots.txt`, JSON-LD structured data, and full Open Graph / Twitter Card metadata — all verified and indexed on Google Search Console.
+我的职业规划ai导师 ships with a production-ready SEO layer, generating a dynamic sitemap, `robots.txt`, JSON-LD structured data, and full Open Graph / Twitter Card metadata — all verified and indexed on Google Search Console.
 
 ### 🗺️ **Dynamic Sitemap (`app/sitemap.ts`)**
 
@@ -866,7 +867,7 @@ Embedded `SoftwareApplication` schema for rich Google search results:
 | Property | Value |
 |:---|:---|
 | `@type` | `SoftwareApplication` |
-| `name` | AI Career Mentor |
+| `name` | 我的职业规划ai导师 |
 | `applicationCategory` | DeveloperApplication |
 | `operatingSystem` | Web |
 | `offers.price` | `0` (Free) |
@@ -878,10 +879,10 @@ Embedded `SoftwareApplication` schema for rich Google search results:
 
 | Meta Tag | Value |
 |:---|:---|
-| `title` | AI Career Mentor — AI-Powered Career Intelligence Platform |
+| `title` | 我的职业规划ai导师 — AI 职业规划平台 |
 | `description` | Full-stack AI platform with 7 specialized agents, real-time mock interviews, ATS resume scoring, and personalized career roadmaps |
 | `keywords` | AI career mentor, resume analysis, mock interview, career roadmap, ATS score, job market intelligence, LinkedIn optimizer, software engineer |
-| `og:title` | AI Career Mentor |
+| `og:title` | 我的职业规划ai导师 |
 | `og:description` | AI-powered career intelligence platform with 7 specialized agents |
 | `og:type` | `website` |
 | `og:url` | `https://ai-career-mentor-anil.vercel.app` |
@@ -1072,8 +1073,7 @@ AI-CAREER-MENTOR/
     ├── .gitignore
     │
     ├── 📁 public/                             # Global static graphics & branding
-    │   ├── favicon.svg                        # Site favicon
-    │   ├── icon.svg                           # App icon (used in Navbar/Footer)
+    │   ├── brand-icon.png                     # Site favicon and app icon
     │   ├── logo.png                           # Legacy logo file
     │   ├── interview.png                      # Interview feature illustration
     │   ├── google453ca98f47dad615.html        # Google Search Console verification file
@@ -1206,7 +1206,7 @@ AI-CAREER-MENTOR/
 <a id="testing-and-api-validation"></a>
 ## 🧪 **Testing and API Validation**
 
-AI CAREER MENTOR enforces quality control across two layers: **113 automated backend unit/integration tests** using Pytest, and a **comprehensive API test suite** via Postman.
+我的职业规划ai导师 enforces quality control across two layers: **113 automated backend unit/integration tests** using Pytest, and a **comprehensive API test suite** via Postman.
 
 ### 🐍 **Pytest Suite (113 Passing Tests)**
 

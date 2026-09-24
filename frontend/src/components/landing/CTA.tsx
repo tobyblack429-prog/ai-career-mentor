@@ -29,7 +29,7 @@ export default function CTA() {
                   Ready to Accelerate Your Career?
                 </h3>
                 <p className="text-sm max-w-lg leading-relaxed" style={{ color: "var(--fg-secondary)" }}>
-                  Join developers who are using CareerMentor to target roles at tech leaders. Free to start — no credit card required.
+                  Join developers who are using 我的职业规划ai导师 to target roles at tech leaders. Free to start — no credit card required.
                 </p>
               </div>
             </div>

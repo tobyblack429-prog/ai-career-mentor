@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
-const SITE_URL = "https://ai-career-mentor-anil.vercel.app";
+const SITE_URL = getSiteUrl();
+const BRAND_NAME = "我的职业规划ai导师";
+const BRAND_ICON = "/brand-icon.png";
 
 export const metadata: Metadata = {
   title: {
-    default: "CareerMentor.ai — AI 职业教练 | 简历、学习路线与模拟面试",
-    template: "%s | CareerMentor.ai",
+    default: `${BRAND_NAME} | 简历、学习路线与模拟面试`,
+    template: `%s | ${BRAND_NAME}`,
   },
   description:
     "中英双语 AI 职业成长平台，提供简历 ATS 审核、个性化学习路线、就业市场数据、领英优化和十阶段模拟面试。",
@@ -29,28 +32,28 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "CareerMentor.ai — Your AI Career Co-Pilot",
+    title: BRAND_NAME,
     description:
-      "5 specialized AI agents working together — audit your resume, build learning roadmaps, track market trends, optimize LinkedIn, and ace mock interviews.",
+      "简历分析、个性化学习路线、中国就业市场、领英优化与模拟面试。",
     url: SITE_URL,
-    siteName: "CareerMentor.ai",
-    locale: "en_US",
+    siteName: BRAND_NAME,
+    locale: "zh_CN",
     type: "website",
     images: [
       {
-        url: "/icon.svg",
-        width: 512,
-        height: 512,
-        alt: "CareerMentor.ai",
+        url: BRAND_ICON,
+        width: 384,
+        height: 384,
+        alt: BRAND_NAME,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "CareerMentor.ai — AI Career Co-Pilot",
+    title: BRAND_NAME,
     description:
-      "Resume audit, learning roadmaps, market trends, LinkedIn SEO, and mock interviews — powered by AI.",
-    images: ["/icon.svg"],
+      "简历分析、学习路线、就业市场和模拟面试，辅助规划职业发展。",
+    images: [BRAND_ICON],
   },
   robots: {
     index: true,
@@ -64,12 +67,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
-    ],
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [{ url: BRAND_ICON, type: "image/png", sizes: "384x384" }],
+    shortcut: BRAND_ICON,
+    apple: BRAND_ICON,
   },
 };
 
@@ -87,7 +87,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
         />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       </head>
       <body>
         <Providers>

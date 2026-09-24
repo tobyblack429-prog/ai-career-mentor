@@ -39,7 +39,7 @@ export default function Navbar() {
             >
                 {/* Logo */}
                 <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <img src="/icon.svg" alt="CareerMentor.ai" style={{ width: "34px", height: "34px", objectFit: "contain", flexShrink: 0 }} />
+                    <img src="/brand-icon.png" alt="我的职业规划ai导师" style={{ width: "36px", height: "36px", objectFit: "contain", flexShrink: 0, borderRadius: "8px", background: "white" }} />
                     <span
                         style={{
                             fontFamily: "'Space Grotesk', sans-serif",
@@ -48,7 +48,7 @@ export default function Navbar() {
                             color: "#f1f5f9",
                         }}
                     >
-                        AI Career Mentor
+                        我的职业规划ai导师
                     </span>
                 </Link>
 

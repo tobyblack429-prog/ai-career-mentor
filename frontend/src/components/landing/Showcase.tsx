@@ -198,10 +198,10 @@ export default function Showcase() {
             }}>
               <div>
                 <div className="flex items-center gap-2.5 mb-8 px-2">
-                  <img src="/icon.svg" alt="CareerMentor.ai" className="w-8 h-8 object-contain shrink-0" />
+                  <img src="/brand-icon.png" alt="我的职业规划ai导师" className="w-9 h-9 rounded-lg object-contain shrink-0 bg-white" />
                   <div>
                     <span className="font-display font-black text-xs tracking-tight leading-none block" style={{ color: "var(--fg-primary)" }}>
-                      CareerMentor<span style={{ color: "var(--brand)" }}>.ai</span>
+                      我的职业规划ai导师
                     </span>
                     <span className="text-[7px] font-bold uppercase tracking-widest mt-0.5 block" style={{ color: "var(--fg-muted)" }}>AI Career Coach</span>
                   </div>

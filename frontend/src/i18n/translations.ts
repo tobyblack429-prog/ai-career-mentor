@@ -8,7 +8,7 @@ export type Locale = "zh" | "en";
 export const zhTranslations: Record<string, string> = {
   // Brand and global navigation
   "AI Career Coach": "AI 职业教练",
-  "AI Career Mentor": "AI 职业导师",
+  "AI Career Mentor": "我的职业规划ai导师",
   "Overview": "概览",
   "Dashboard": "仪表盘",
   "Full Analysis": "综合分析",
@@ -609,7 +609,7 @@ export const zhTranslations: Record<string, string> = {
   "100% Free to Start": "完全免费开始",
   "Join 100+ developers": "已有 100 多名开发者加入",
   "Powered by Multi-Provider AI Engine": "由多模型 AI 引擎驱动",
-  "Is CareerMentor really free?": "CareerMentor 真的免费吗？",
+  "Is 我的职业规划ai导师 really free?": "“我的职业规划ai导师”真的免费吗？",
   "How does the full career analysis work?": "综合职业分析如何工作？",
   "How does the resume ATS audit work?": "ATS 简历审核如何工作？",
   "How does the mock interview adapt to me?": "模拟面试如何根据我的表现调整？",
@@ -645,11 +645,11 @@ export const zhTranslations: Record<string, string> = {
   "Questions mapped to real interview formats": "问题贴合真实面试形式",
   "Success Stories": "成功案例",
   "Common Questions": "常见问题",
-  "Real results from developers who used CareerMentor to land their dream roles": "来自使用 CareerMentor 获得理想职位的开发者真实反馈",
-  "Join developers who are using CareerMentor to target roles at tech leaders. Free to start — no credit card required.": "加入正在冲刺头部科技公司职位的开发者，免费开始，无需信用卡。",
+  "Real results from developers who used 我的职业规划ai导师 to land their dream roles": "来自使用“我的职业规划ai导师”获得理想职位的开发者真实反馈",
+  "Join developers who are using 我的职业规划ai导师 to target roles at tech leaders. Free to start — no credit card required.": "加入正在使用“我的职业规划ai导师”冲刺理想职位的开发者，免费开始，无需信用卡。",
   "Get full access to all 5 AI agents. Free tier includes all core features — no credit card required.": "使用全部 5 个 AI 智能体；免费版包含所有核心功能，无需信用卡。",
   "Desktop Only": "仅支持电脑端",
-  "This website cannot support on this device. Please log in from a desktop or laptop computer to access your AI Career Mentor.": "此网站暂不支持当前设备，请使用台式机或笔记本电脑访问 AI 职业导师。",
+  "This website cannot support on this device. Please use a desktop or laptop computer to access 我的职业规划ai导师.": "此网站暂不支持当前设备，请使用台式机或笔记本电脑访问“我的职业规划ai导师”。",
 
   // Admin / observability
   "Observability": "可观测性",
@@ -699,8 +699,8 @@ export const zhTranslations: Record<string, string> = {
   "An unexpected error occurred while processing your request. Don't worry, our AI agents are looking into it.": "处理请求时发生意外错误，AI 助手正在排查。",
   "Global App Error:": "应用错误：",
   "Dashboard Error:": "仪表盘错误：",
-  "CareerMentor": "CareerMentor",
-  "CareerMentor.ai": "CareerMentor.ai",
+  "CareerMentor": "我的职业规划ai导师",
+  "CareerMentor.ai": "我的职业规划ai导师",
 
   // Resume roles returned by the backend. The English value remains the
   // option value submitted to the API; only the visible label is localized.

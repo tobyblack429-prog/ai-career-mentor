@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function MobileBlocker() {
   const [isMobile, setIsMobile] = useState(false);
@@ -26,21 +27,20 @@ export default function MobileBlocker() {
 
       {/* Blocker Card */}
       <div className="relative z-10 max-w-sm w-full p-8 rounded-[2rem] bg-[#0d0f17]/80 border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col items-center">
-        {/* Glowing Monitor/Laptop Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.15)] animate-pulse">
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-            <line x1="8" y1="21" x2="16" y2="21" />
-            <line x1="12" y1="17" x2="12" y2="21" />
-          </svg>
-        </div>
+        <Image
+          src="/brand-icon.png"
+          alt="我的职业规划ai导师"
+          width={64}
+          height={64}
+          className="w-16 h-16 rounded-2xl object-contain bg-white mb-6 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+        />
 
         {/* Text Details */}
         <h2 className="text-xl font-bold text-white mb-3 tracking-tight">
           Desktop Only
         </h2>
         <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-6">
-          This website cannot support on this device. Please log in from a desktop or laptop computer to access your AI Career Mentor.
+          This website cannot support on this device. Please use a desktop or laptop computer to access 我的职业规划ai导师.
         </p>
 
         {/* Pulsing indicator */}

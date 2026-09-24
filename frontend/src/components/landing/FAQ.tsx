@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 
 const FAQS = [
   {
-    q: "Is CareerMentor really free?",
+    q: "Is 我的职业规划ai导师 really free?",
     a: "Yes. The free tier gives you access to all 5 AI agents — 1 resume audit every 2 days, 1 mock interview per week, 1 roadmap every 5 days, plus LinkedIn reviews and market scrapes. No credit card required.",
   },
   {

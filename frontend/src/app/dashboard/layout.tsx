@@ -12,7 +12,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -83,8 +83,7 @@ export default function DashboardLayout({
               {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
             </button>
             <span className="font-display font-semibold" style={{ fontSize: "0.8125rem", color: "var(--fg-primary)" }}>
-              {locale === "zh" ? "职业导师" : "CareerMentor"}
-              {locale === "en" && <span style={{ color: "var(--brand)" }}>.ai</span>}
+              我的职业规划ai导师
             </span>
             <div style={{ width: "32px" }} />
           </div>

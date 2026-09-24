@@ -14,9 +14,9 @@ export default function Footer() {
           {/* Left: Logo + System Status */}
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 no-underline">
-              <img src="/icon.svg" alt="CareerMentor.ai" className="w-6 h-6 object-contain shrink-0" />
+              <img src="/brand-icon.png" alt="我的职业规划ai导师" className="w-7 h-7 rounded-md object-contain shrink-0 bg-white" />
               <span className="font-display font-bold text-xs" style={{ color: "var(--fg-primary)" }}>
-                CareerMentor<span style={{ color: "var(--brand)" }}>.ai</span>
+                我的职业规划ai导师
               </span>
             </Link>
             <div className="flex items-center gap-1.5">
