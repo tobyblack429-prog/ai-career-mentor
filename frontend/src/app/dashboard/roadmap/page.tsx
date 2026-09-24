@@ -7,8 +7,10 @@ import { generateRoadmap, getRoadmapHistory, deleteRoadmap, getMarketConfig } fr
 import { RoadmapResponse } from "@/types";
 import RoadmapPanel from "@/components/full-analysis/RoadmapPanel";
 import RoadmapHistory from "@/components/full-analysis/RoadmapHistory";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function RoadmapPage() {
+  const { t, locale } = useLanguage();
   const [config, setConfig] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [customGaps, setCustomGaps] = useState("");
@@ -69,18 +71,18 @@ export default function RoadmapPage() {
     if (!roadmap) return;
     const currentPrimary = localStorage.getItem("primary_goal_role");
     if (currentPrimary && currentPrimary !== roadmap.target_role) {
-      alert(`You have already set a primary goal for another role ("${currentPrimary}"). Please remove it first.`);
+      alert(`${t("You have already set a primary goal for another role")} ("${currentPrimary}"). ${t("Please remove it first.")}`);
       return;
     }
     localStorage.setItem("primary_goal_role", roadmap.target_role);
     setPrimaryGoal(roadmap.target_role);
-    toast.success(`${roadmap.target_role} set as Primary Goal!`);
+    toast.success(`${roadmap.target_role} ${t("set as Primary Goal!")}`);
   };
 
   const handleRemovePrimary = () => {
     localStorage.removeItem("primary_goal_role");
     setPrimaryGoal(null);
-    toast.success("Primary Goal removed.");
+    toast.success(t("Primary Goal removed."));
   };
 
   const handleGenerate = async () => {
@@ -90,10 +92,12 @@ export default function RoadmapPage() {
       .map((s) => s.trim())
       .filter(Boolean);
     if (gaps.length === 0) {
-      gaps = ["Comprehensive Beginner to Advanced Progression", "Core Foundations", "Real-world Practical Projects"];
+      gaps = locale === "zh"
+        ? ["从基础到进阶的完整成长", "核心基础", "真实项目实践"]
+        : ["Comprehensive Beginner to Advanced Progression", "Core Foundations", "Real-world Practical Projects"];
     }
     try {
-      const result = await generateRoadmap(selectedRole, gaps, undefined, expLevel);
+      const result = await generateRoadmap(selectedRole, gaps, undefined, expLevel, locale);
       setRoadmap(result);
       const roleKey = result.target_role.toLowerCase().replace(/\s+/g, "_");
       localStorage.setItem(`roadmap_total_${roleKey}`, String(result.weeks?.length || 8));
@@ -102,7 +106,7 @@ export default function RoadmapPage() {
       getRoadmapHistory().then((data) => setHistoryList(data.history || []));
     } catch (err: any) {
       setStatus("error");
-      toast.error(err.message || "Failed to generate roadmap");
+      toast.error(err.message || t("Failed to generate roadmap"));
     }
   };
 
@@ -110,9 +114,9 @@ export default function RoadmapPage() {
     try {
       await deleteRoadmap(id);
       setHistoryList((prev) => prev.filter((h) => h.id !== id));
-      toast.success("Roadmap deleted");
+      toast.success(t("Roadmap deleted"));
     } catch {
-      toast.error("Delete failed");
+      toast.error(t("Delete failed"));
     }
   };
 
@@ -123,16 +127,16 @@ export default function RoadmapPage() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Map size={15} style={{ color: "var(--accent-purple)" }} />
-            <span className="text-label" style={{ color: "var(--accent-purple)" }}>Roadmap</span>
+            <span className="text-label" style={{ color: "var(--accent-purple)" }}>{t("Roadmap")}</span>
           </div>
-          <h1 className="text-h1" style={{ color: "var(--fg-primary)" }}>Learning Roadmaps</h1>
+          <h1 className="text-h1" style={{ color: "var(--fg-primary)" }}>{t("Learning Roadmaps")}</h1>
         </div>
         <button
           onClick={() => setShowHistory(true)}
           className="btn btn-secondary btn-sm"
           style={{ display: "flex", alignItems: "center", gap: "6px" }}
         >
-          <History size={15} /> History
+          <History size={15} /> {t("History")}
         </button>
       </div>
 
@@ -140,34 +144,34 @@ export default function RoadmapPage() {
       <div className="card mb-10 animate-fade-up-delay-1" style={{ padding: "28px" }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
-            <label className="text-label mb-2 block">Target Role</label>
+            <label className="text-label mb-2 block">{t("Target Role")}</label>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
               className="input"
             >
               {config?.roles?.map((r: string) => (
-                <option key={r} value={r} style={{ background: "var(--bg-surface)" }}>{r}</option>
+                <option key={r} value={r} style={{ background: "var(--bg-surface)" }}>{t(r)}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-label mb-2 block">Skill Gaps (Optional)</label>
+            <label className="text-label mb-2 block">{t("Skill Gaps (Optional)")}</label>
             <input
               value={customGaps}
               onChange={(e) => setCustomGaps(e.target.value)}
-              placeholder="e.g. React, Docker, SQL"
+              placeholder={locale === "zh" ? "例如：React、Docker、SQL" : "e.g. React, Docker, SQL"}
               className="input"
             />
           </div>
         </div>
 
         <div className="mb-6">
-          <label className="text-label mb-3 block">Roadmap Level</label>
+            <label className="text-label mb-3 block">{t("Roadmap Level")}</label>
           <div className="flex gap-3">
             {[
-              { value: "beginner_to_intermediate" as const, label: "Beginner to Intermediate", icon: "🌱" },
-              { value: "intermediate_to_advanced" as const, label: "Intermediate to Advanced", icon: "🚀" },
+              { value: "beginner_to_intermediate" as const, label: t("Beginner to Intermediate"), icon: "🌱" },
+              { value: "intermediate_to_advanced" as const, label: t("Intermediate to Advanced"), icon: "🚀" },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -198,7 +202,7 @@ export default function RoadmapPage() {
           style={{ padding: "14px", fontSize: "0.9375rem", fontWeight: 600 }}
         >
           {status === "loading" ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-          {status === "loading" ? "Architecting Curriculum..." : "Generate Master Roadmap"}
+          {status === "loading" ? t("Architecting Curriculum...") : t("Generate Master Roadmap")}
         </button>
       </div>
 
@@ -206,7 +210,7 @@ export default function RoadmapPage() {
       {status === "loading" && (
         <div className="text-center py-16">
           <Loader2 size={40} className="animate-spin mx-auto mb-4" style={{ color: "var(--brand)" }} />
-          <h2 className="text-h2" style={{ color: "var(--fg-primary)" }}>Synthesizing Learning Path...</h2>
+          <h2 className="text-h2" style={{ color: "var(--fg-primary)" }}>{t("Synthesizing Learning Path...")}</h2>
         </div>
       )}
 
@@ -215,12 +219,12 @@ export default function RoadmapPage() {
         <div className="animate-fade-up">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div className="badge badge-brand" style={{ padding: "8px 16px", fontSize: "0.8125rem" }}>
-              🎯 Focus: {roadmap.target_role}
+              🎯 {t("Focus:")} {t(roadmap.target_role)}
             </div>
             <div className="flex gap-3">
               {primaryGoal === roadmap.target_role ? (
                 <button onClick={handleRemovePrimary} className="btn btn-danger btn-sm">
-                  ✖ Remove Primary Goal
+                  ✖ {t("Remove Primary Goal")}
                 </button>
               ) : (
                 <button onClick={handleSetPrimary} className="btn btn-sm" style={{
@@ -228,7 +232,7 @@ export default function RoadmapPage() {
                   color: "var(--accent-emerald)",
                   border: "1px solid rgba(16, 185, 129, 0.2)",
                 }}>
-                  ⭐ Set as Primary Goal
+                  ⭐ {t("Set as Primary Goal")}
                 </button>
               )}
             </div>
@@ -259,11 +263,11 @@ export default function RoadmapPage() {
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                   <div>
                     <div style={{ fontSize: "0.6875rem", color: "var(--fg-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
-                      Syllabus Coverage
+                      {t("Syllabus Coverage")}
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="font-display font-bold" style={{ fontSize: "1.5rem", color: "var(--fg-primary)" }}>{pct}%</span>
-                      <span style={{ fontSize: "0.8125rem", color: "var(--fg-muted)" }}>({progress.completed} / {progress.total} Weeks)</span>
+                      <span style={{ fontSize: "0.8125rem", color: "var(--fg-muted)" }}>({progress.completed} / {progress.total} {t("Weeks")})</span>
                     </div>
                   </div>
                   <div
@@ -278,7 +282,7 @@ export default function RoadmapPage() {
                       fontSize: "0.8125rem",
                     }}
                   >
-                    Level: {lvlName}
+                    {t("Level:")} {t(lvlName)}
                   </div>
                 </div>
                 <div style={{ width: "100%", height: "6px", background: "var(--border-subtle)", borderRadius: "99px", overflow: "hidden" }}>

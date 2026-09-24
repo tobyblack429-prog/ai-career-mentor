@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   Activity, Brain, ChevronRight, Zap, Flame, BookOpen, Trophy,
   FileText, Map, MessageSquare, TrendingUp, Target, Clock,
-  BarChart, Users, Settings, LogOut
+  BarChart, Users, Settings
 } from "lucide-react";
 
 const SIDEBAR_NAV = [
@@ -233,10 +233,9 @@ export default function Showcase() {
                 }}>
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black" style={{ background: "var(--brand)", color: "#fff" }}>AN</div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold truncate" style={{ color: "var(--fg-primary)" }}>Anilpradhan</div>
-                    <div className="text-[8px] font-medium" style={{ color: "var(--fg-muted)" }}>Free plan</div>
+                    <div className="text-[10px] font-bold truncate" style={{ color: "var(--fg-primary)" }}>Local User</div>
+                    <div className="text-[8px] font-medium" style={{ color: "var(--fg-muted)" }}>Local workspace</div>
                   </div>
-                  <LogOut size={12} style={{ color: "var(--fg-muted)" }} />
                 </div>
               </div>
             </div>
@@ -485,7 +484,7 @@ export default function Showcase() {
               {/* Bottom CTA */}
               <div className="flex items-center justify-between pt-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
                 <div className="text-[8px] font-bold uppercase tracking-widest" style={{ color: "var(--fg-muted)" }}>Powered by Multi-Provider AI Engine</div>
-                <Link href="/register" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-lg transition-all" style={{
+                <Link href="/dashboard" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-lg transition-all" style={{
                   color: "#fff",
                   background: "var(--brand-gradient)",
                   border: "1px solid rgba(59,130,246,0.2)"

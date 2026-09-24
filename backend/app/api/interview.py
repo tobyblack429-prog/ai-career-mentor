@@ -20,7 +20,8 @@ async def websocket_endpoint(
     token: str | None = None,
     type: str = "technical",
     provider: str = Query("groq"),
-    role_level: str = Query("fresher")
+    role_level: str = Query("fresher"),
+    language: str = Query("en")
 ):
     """Establishes the WebSocket connection and delegates execution to core manager."""
     await handle_websocket_connection(
@@ -33,7 +34,8 @@ async def websocket_endpoint(
         token=token,
         type=type,
         provider=provider,
-        role_level=role_level
+        role_level=role_level,
+        language="zh" if language.lower().startswith("zh") else "en"
     )
 
 

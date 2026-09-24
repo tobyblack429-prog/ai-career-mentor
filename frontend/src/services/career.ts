@@ -87,7 +87,7 @@ export const runFullAnalysisNew = async (
             let event: any;
             try {
                 event = JSON.parse(raw);
-            } catch (e) {
+            } catch {
                 // Ignore parse errors for partial chunks
                 continue;
             }

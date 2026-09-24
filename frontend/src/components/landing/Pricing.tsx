@@ -38,22 +38,17 @@ const TRUST_ITEMS = [
 export default function Pricing() {
   const router = useRouter();
   const [mounted, setMounted] = React.useState(false);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const isLoggedIn = true;
   const [isPremium, setIsPremium] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
-    setIsLoggedIn(!!localStorage.getItem("token"));
     setIsPremium(localStorage.getItem("user_tier") === "premium");
   }, []);
 
   const handlePlanClick = (planId: string) => {
     if (planId === "free") {
-      if (isLoggedIn) {
-        router.push("/dashboard");
-      } else {
-        router.push("/register");
-      }
+      router.push("/dashboard");
     } else {
       toast("The Premium Pro tier is currently under development. Coming soon!", {
         icon: "⚡",

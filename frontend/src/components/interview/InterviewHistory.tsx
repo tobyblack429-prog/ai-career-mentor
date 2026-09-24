@@ -1,5 +1,6 @@
 import React from "react";
 import { History, Trash2, X, Star, Clock } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Props {
     history: any[];
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function InterviewHistory({ history, onSelect, onDelete, onClose }: Props) {
+    const { t } = useLanguage();
     return (
         <div style={{
             position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
@@ -25,7 +27,7 @@ export default function InterviewHistory({ history, onSelect, onDelete, onClose 
                 }}>
                     <div className="flex items-center gap-2">
                         <History size={16} style={{ color: "var(--brand)" }} />
-                        <h3 style={{ color: "var(--fg-primary)", fontSize: "1rem", fontWeight: 700 }}>Session History</h3>
+                        <h3 style={{ color: "var(--fg-primary)", fontSize: "1rem", fontWeight: 700 }}>{t("Session History")}</h3>
                     </div>
                     <button
                         onClick={onClose}
@@ -40,7 +42,7 @@ export default function InterviewHistory({ history, onSelect, onDelete, onClose 
                     {history.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--fg-muted)" }}>
                             <History size={28} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
-                            <p style={{ fontSize: "0.8125rem" }}>No interview sessions yet</p>
+                            <p style={{ fontSize: "0.8125rem" }}>{t("No interview sessions yet")}</p>
                         </div>
                     ) : (
                         <div className="flex flex-col" style={{ gap: "8px" }}>

@@ -5,8 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/dashboard/", "/login", "/register"],
+        allow: ["/", "/dashboard/"],
       },
     ],
     sitemap: "https://ai-career-mentor-anil.vercel.app/sitemap.xml",

@@ -251,7 +251,11 @@ def validate_skill_gap_coverage(weeks: list[dict], skill_gaps: list[str]) -> tup
 
 
 
-def generate_fallback_roadmap(target_role: str, skill_gaps: list[str]) -> list[dict]:
+def generate_fallback_roadmap(
+    target_role: str,
+    skill_gaps: list[str],
+    language: str = "en",
+) -> list[dict]:
     """
     Generate a generic, structured 8-week roadmap as a fail-safe backup.
     """
@@ -307,7 +311,7 @@ def generate_fallback_roadmap(target_role: str, skill_gaps: list[str]) -> list[d
             success_criteria = "Application is containerized and ready for CI/CD staging pipeline."
             hours = 18
 
-        weeks.append({
+        week = {
             "week": week_num,
             "topic": topic,
             "skill_gap_addressed": current_gap,
@@ -325,7 +329,25 @@ def generate_fallback_roadmap(target_role: str, skill_gaps: list[str]) -> list[d
                 f"What are the top 3 best practices for {current_gap}?",
                 f"How can I test or debug a {current_gap} implementation?"
             ]
-        })
+        }
+        if language == "zh":
+            week.update({
+                "topic": f"{current_gap}：第 {week_num} 周进阶主题",
+                "why_it_matters": f"掌握 {current_gap} 是胜任目标岗位的重要基础。",
+                "mini_project": f"围绕 {current_gap} 完成一个可运行、可测试的实践项目。",
+                "success_criteria": "项目可以正常运行，并通过本周目标对应的验证与测试。",
+                "resource_search_queries": [
+                    f"{current_gap} 最佳实践",
+                    f"{current_gap} 教程",
+                    f"{target_role} {current_gap} 项目",
+                ],
+                "explore_more_questions": [
+                    f"{current_gap} 如何用于高并发业务场景？",
+                    f"{current_gap} 最重要的三项最佳实践是什么？",
+                    f"如何测试或调试 {current_gap} 的实现？",
+                ],
+            })
+        weeks.append(week)
 
     return weeks
 

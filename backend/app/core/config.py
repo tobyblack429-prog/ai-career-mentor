@@ -48,6 +48,11 @@ class Settings:
     # ── App ───────────────────────────────────────────────────────────────────
     APP_ENV: str = os.getenv("APP_ENV", "development")
     DEBUG: bool = APP_ENV == "development"
+    AUTH_DISABLED: bool = (
+        os.getenv("AUTH_DISABLED", "false").lower() == "true"
+        and os.getenv("TESTING", "false").lower() != "true"
+        and os.getenv("CI", "false").lower() != "true"
+    )
 
     # ── Observability & RBAC ──────────────────────────────────────────────────
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "anilpradhan9644@gmail.com")

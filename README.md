@@ -1283,7 +1283,7 @@ Get the entire development environment running locally in minutes. Choose betwee
 If you are developing on Windows, a custom orchestrator script is included at the root to launch both servers simultaneously:
 
 * Execute **`.\start.bat`** from your terminal, or double-click the file in File Explorer.
-* This automatically creates and updates dependencies, boots the FastAPI gateway on `http://localhost:8000`, and spins up the Next.js developer compilation on `http://localhost:3000` in separate shell panels.
+* After the native installation below, this runs `start-local.ps1` to launch both services in the background, checks the API/database and dashboard, then opens `http://localhost:3000/dashboard`. You can close the startup window once it reports ready. Run it again after restarting Windows; healthy services are reused, and timestamped logs are kept in `logs/`. The launcher does not install or update dependencies.
 
 ---
 

@@ -5,19 +5,35 @@ import { FileText, Zap, Play } from "lucide-react";
 import UploadResumeCard from "@/components/UploadResumeCard";
 import ResumeAnalysisPanel from "@/components/ResumeAnalysisPanel";
 import { ResumeAnalysis } from "@/types";
+import { getUserStats } from "@/services/api";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function ResumePage() {
   const router = useRouter();
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
   const [analyzedFilename, setAnalyzedFilename] = useState<string>("");
   const [resumeProvider, setResumeProvider] = useState<string>("groq");
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const pref = localStorage.getItem("preferred_provider");
       if (pref) setResumeProvider(pref);
     }
+
+    // Restore the latest locally saved analysis so a demo or previous upload
+    // remains visible after navigating away or restarting the frontend.
+    getUserStats()
+      .then((stats) => {
+        if (stats?.lastResumeAnalysis) {
+          setAnalysis(stats.lastResumeAnalysis as ResumeAnalysis);
+          setAnalyzedFilename(stats.lastResumeFilename || "Saved resume");
+        }
+      })
+      .catch(() => {
+        // The upload flow remains available if the stats request is unavailable.
+      });
   }, []);
 
   const handleAnalysisComplete = (result: ResumeAnalysis, filename: string) => {
@@ -34,13 +50,13 @@ export default function ResumePage() {
       <div className="mb-8 animate-fade-up">
         <div className="flex items-center gap-2 mb-3">
           <FileText size={15} style={{ color: "var(--brand)" }} />
-          <span className="text-label-brand">Resume</span>
+          <span className="text-label-brand">{t("Resume")}</span>
         </div>
         <h1 className="text-h1" style={{ color: "var(--fg-primary)" }}>
-          Resume Analyzer
+          {t("Resume Analyzer")}
         </h1>
         <p className="mt-2" style={{ color: "var(--fg-secondary)", fontSize: "0.9375rem", maxWidth: "600px" }}>
-          Let our AI agent scan your resume and identify strengths, skills, and areas for improvement.
+          {t("Let our AI agent scan your resume and identify strengths, skills, and areas for improvement.")}
         </p>
       </div>
 
@@ -71,10 +87,10 @@ export default function ResumePage() {
                 className="font-display font-bold mb-1"
                 style={{ fontSize: "1.125rem", color: "var(--fg-primary)" }}
               >
-                Practice your skills through our interview agent
+                {t("Practice your skills through our interview agent")}
               </h3>
               <p style={{ color: "var(--fg-secondary)", fontSize: "0.875rem" }}>
-                Your resume is analyzed! Start a tailored mock interview simulation now.
+                {t("Your resume is analyzed! Start a tailored mock interview simulation now.")}
               </p>
             </div>
             <button
@@ -82,7 +98,7 @@ export default function ResumePage() {
               className="btn btn-primary"
               style={{ padding: "12px 24px", fontWeight: 600 }}
             >
-              <Play size={14} fill="white" /> Start Interview
+              <Play size={14} fill="white" /> {t("Start Interview")}
             </button>
           </div>
 
@@ -91,7 +107,7 @@ export default function ResumePage() {
             <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, var(--border-default))" }} />
             <span className="text-label-brand flex items-center gap-2">
               <Zap size={12} />
-              Resume Analysis Detailed Breakdown
+              {t("Resume Analysis Detailed Breakdown")}
             </span>
             <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, transparent, var(--border-default))" }} />
           </div>

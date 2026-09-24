@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 
@@ -13,11 +13,6 @@ const navLinks = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem("token"));
-  }, []);
 
   const handleNavClick = (href: string) => {
     setMenuOpen(false);
@@ -82,13 +77,13 @@ export default function Navbar() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Link href={isAuthenticated ? "/dashboard" : "/login"} style={{ textDecoration: "none" }}>
+          <Link href="/dashboard" style={{ textDecoration: "none" }}>
             <button
               className="btn btn-primary"
               style={{ padding: "8px 18px", fontSize: "0.8125rem", fontWeight: 600 }}
               id="navbar-get-started-btn"
             >
-              {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
+              Open Career Workspace
             </button>
           </Link>
           <button

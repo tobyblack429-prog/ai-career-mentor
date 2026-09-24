@@ -5,7 +5,8 @@ export const generateRoadmap = async (
     targetRole: string,
     skillGaps: string[],
     provider?: string,
-    experienceLevel?: string
+    experienceLevel?: string,
+    language: "zh" | "en" = "en"
 ): Promise<RoadmapResponse> => {
     const activeProvider = provider || localStorage.getItem("preferred_provider") || "groq";
     const { data } = await client.post(
@@ -14,7 +15,8 @@ export const generateRoadmap = async (
             target_role: targetRole, 
             skill_gaps: skillGaps, 
             provider: activeProvider,
-            experience_level: experienceLevel 
+            experience_level: experienceLevel,
+            language
         },
         { timeout: 300_000 }
     );
@@ -36,5 +38,4 @@ export const toggleRoadmapWeek = async (roadmapId: string, weekNumber: number, c
     const { data } = await client.put(url);
     return data;
 };
-
 

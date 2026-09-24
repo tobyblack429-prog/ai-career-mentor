@@ -83,8 +83,14 @@ def run_market_agent(
     )
 
     from app.core import llm_client
+    system_prompt = _MARKET_SYSTEM_PROMPT
+    if "china" in location.lower():
+        system_prompt += (
+            "\nThe location is in China. Write summary, market_trend, hiring_volume, and hiring "
+            "descriptions in Simplified Chinese. Preserve only technical terms and standard abbreviations."
+        )
     result = llm_client.run_market_agent(
-        system_prompt=_MARKET_SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         user_content=user_content,
         response_model=MarketTrendsModel,
     )

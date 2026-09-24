@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
-  User, Lock, Shield, Save, MessageSquare as Bell, TrendingUp as CreditCard,
-  LayoutDashboard as Monitor, Map as Smartphone, Sparkles as Moon, Zap as Sun, Zap, Trash2, Key,
+  User, Save, MessageSquare as Bell, TrendingUp as CreditCard,
+  LayoutDashboard as Monitor, Sparkles as Moon, Zap as Sun, Zap,
   CheckCircle, Settings, Briefcase, Mail
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatDisplayName } from "@/utils/formatName";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const [name, setName] = useState("User");
+  const { locale, t } = useLanguage();
+  const [name, setName] = useState("Local User");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [theme, setTheme] = useState("dark");
@@ -27,9 +27,9 @@ export default function SettingsPage() {
       ? storedName
       : storedEmail
         ? formatDisplayName(storedEmail.split("@")[0])
-        : "User";
-    setName(displayName);
-  }, []);
+        : "Local User";
+    setName(displayName === "Local User" ? t("Local User") : displayName);
+  }, [locale, t]);
 
   const handleSave = () => {
     setLoading(true);
@@ -46,7 +46,6 @@ export default function SettingsPage() {
     { id: "preferences", label: "Preferences", icon: Settings, color: "#8b5cf6" },
     { id: "notifications", label: "Notifications", icon: Bell, color: "#6366f1" },
     { id: "billing", label: "Billing & Plan", icon: CreditCard, color: "#8b5cf6" },
-    { id: "security", label: "Security", icon: Shield, color: "#ef4444" },
   ];
 
   const ToggleSwitch = ({ checked, onChange, label, description }: any) => (
@@ -92,7 +91,7 @@ export default function SettingsPage() {
         </div>
         <h1 className="text-h1" style={{ color: "var(--fg-primary)" }}>Settings & Preferences</h1>
         <p className="mt-2" style={{ color: "var(--fg-secondary)", fontSize: "0.9375rem" }}>
-          Manage your account, AI configurations, and billing.
+          Manage this local workspace, interface preferences, and usage options.
         </p>
       </div>
 
@@ -161,12 +160,12 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-label mb-2 block">Email Address</label>
+                  <label className="text-label mb-2 block">Workspace Mode</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--fg-muted)" }} />
                     <input
                       type="email"
-                      value="user@example.com"
+                      value={t("Local guest workspace")}
                       disabled
                       className="input input-with-icon"
                       style={{ opacity: 0.5, cursor: "not-allowed" }}
@@ -294,87 +293,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* SECURITY TAB */}
-          {activeTab === "security" && (
-            <div className="animate-fade-up">
-              <h2 className="text-h3 mb-6" style={{ color: "var(--fg-primary)" }}>Security</h2>
-
-              <div className="card mb-5" style={{ padding: "20px" }}>
-                <h3 className="flex items-center gap-2 font-semibold mb-4" style={{ fontSize: "0.9375rem", color: "var(--fg-primary)" }}>
-                  <Key size={16} style={{ color: "var(--accent-rose)" }} /> Password & Authentication
-                </h3>
-                <button
-                  onClick={() => toast("Password reset link sent to your email.")}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                >
-                  <Lock size={14} /> Change Password
-                </button>
-              </div>
-
-              <div className="card mb-5" style={{ padding: "20px" }}>
-                <h3 className="flex items-center gap-2 font-semibold mb-4" style={{ fontSize: "0.9375rem", color: "var(--fg-primary)" }}>
-                  <Monitor size={16} style={{ color: "var(--fg-muted)" }} /> Active Sessions
-                </h3>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between" style={{ padding: "12px 14px", background: "var(--bg-surface)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                    <div className="flex items-center gap-3">
-                      <Monitor size={16} style={{ color: "var(--fg-muted)" }} />
-                      <div>
-                        <p className="font-semibold" style={{ fontSize: "0.8125rem", color: "var(--fg-primary)" }}>Windows PC - Chrome</p>
-                        <p style={{ fontSize: "0.6875rem", color: "var(--fg-muted)" }}>Active Now · India</p>
-                      </div>
-                    </div>
-                    <span className="badge badge-green">Current</span>
-                  </div>
-                  <div className="flex items-center justify-between" style={{ padding: "12px 14px", background: "var(--bg-surface)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                    <div className="flex items-center gap-3">
-                      <Smartphone size={16} style={{ color: "var(--fg-muted)" }} />
-                      <div>
-                        <p className="font-semibold" style={{ fontSize: "0.8125rem", color: "var(--fg-primary)" }}>iPhone 15 - Safari</p>
-                        <p style={{ fontSize: "0.6875rem", color: "var(--fg-muted)" }}>Yesterday · India</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("refreshToken");
-                    localStorage.removeItem("userName");
-                    toast.success("Successfully logged out everywhere.");
-                    router.replace("/login");
-                  }}
-                  className="btn btn-danger btn-sm mt-4"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-                >
-                  Log Out All Devices
-                </button>
-              </div>
-
-              <div
-                className="flex items-center justify-between flex-wrap gap-4"
-                style={{
-                  padding: "20px",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                  borderRadius: "var(--radius-lg)",
-                  background: "rgba(239, 68, 68, 0.04)",
-                }}
-              >
-                <div>
-                  <h3 className="font-semibold" style={{ fontSize: "0.9375rem", color: "var(--accent-rose)", marginBottom: "2px" }}>Delete Account</h3>
-                  <p style={{ fontSize: "0.8125rem", color: "var(--fg-muted)" }}>Permanently delete your account and all data.</p>
-                </div>
-                <button
-                  onClick={() => toast.error("Account deletion requested.")}
-                  className="btn btn-danger btn-sm"
-                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                >
-                  <Trash2 size={14} /> Delete
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

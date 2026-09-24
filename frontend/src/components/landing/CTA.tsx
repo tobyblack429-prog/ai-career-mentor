@@ -35,7 +35,7 @@ export default function CTA() {
             </div>
 
             <Link
-              href="/register"
+              href="/dashboard"
               className="btn btn-primary shrink-0"
               style={{ padding: "16px 32px", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}
             >

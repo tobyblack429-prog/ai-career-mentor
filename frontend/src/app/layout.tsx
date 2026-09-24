@@ -5,11 +5,11 @@ const SITE_URL = "https://ai-career-mentor-anil.vercel.app";
 
 export const metadata: Metadata = {
   title: {
-    default: "CareerMentor.ai — AI Career Coach | Resume, Roadmap, Mock Interviews",
+    default: "CareerMentor.ai — AI 职业教练 | 简历、学习路线与模拟面试",
     template: "%s | CareerMentor.ai",
   },
   description:
-    "Free AI-powered career platform with resume ATS auditing, personalized learning roadmaps, live market salary data, LinkedIn SEO optimization, and 10-phase mock interviews — all in one place.",
+    "中英双语 AI 职业成长平台，提供简历 ATS 审核、个性化学习路线、就业市场数据、领英优化和十阶段模拟面试。",
   keywords: [
     "AI career mentor",
     "resume ATS scorer",
@@ -78,7 +78,7 @@ import { Providers } from "@/components/Providers";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="zh-CN" suppressHydrationWarning>
       <head>
         {/* ── Non-blocking font loading (preconnect + display=swap) ── */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

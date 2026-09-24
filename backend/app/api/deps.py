@@ -6,15 +6,38 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.models import User
 from app.core.security import SECRET_KEY, ALGORITHM
+from app.core.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+GUEST_EMAIL = "guest@local.careermentor"
+
+
+def get_or_create_guest_user(db: Session) -> User:
+    """Return the single local workspace user used when authentication is disabled."""
+    user = db.query(User).filter(User.email == GUEST_EMAIL).first()
+    if user is None:
+        user = User(name="Local User", email=GUEST_EMAIL, hashed_pw=None)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+def get_current_user(token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    if settings.AUTH_DISABLED:
+        return get_or_create_guest_user(db)
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") == "refresh":
@@ -36,4 +59,3 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         pass
         
     return user
-

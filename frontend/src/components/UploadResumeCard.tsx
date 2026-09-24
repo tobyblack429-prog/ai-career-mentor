@@ -5,6 +5,8 @@ import { useDropzone } from "react-dropzone";
 import { Upload, FileText, CheckCircle, X, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { analyzeResume, getMarketConfig } from "@/services/api";
 import type { ResumeAnalysis } from "@/types";
+import { useLanguage } from "./LanguageProvider";
+import { translateDynamicToChinese } from "@/i18n/translations";
 
 interface Props {
     onAnalysisComplete?: (analysis: ResumeAnalysis, filename: string) => void;
@@ -20,6 +22,7 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
     const [progress, setProgress] = useState(0);
     const [roles, setRoles] = useState<string[]>([]);
     const [selectedRole, setSelectedRole] = useState<string>("");
+    const { t, locale } = useLanguage();
 
     useEffect(() => {
         getMarketConfig()
@@ -84,8 +87,14 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
             const msg =
                 err instanceof Error
                     ? err.message
-                    : "Failed to analyze resume. Please try again.";
-            setError(msg.includes("422") ? "Could not extract text — make sure PDF is not scanned." : msg);
+                    : t("Failed to analyze resume. Please try again.");
+            setError(
+                msg.includes("422")
+                    ? t("Could not extract text — make sure PDF is not scanned.")
+                    : locale === "zh"
+                        ? translateDynamicToChinese(msg, "description")
+                        : msg,
+            );
         }
     };
 
@@ -96,18 +105,18 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
             {/* Header */}
             <div>
                 <h3 className="font-display" style={{ fontSize: "1rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "4px" }}>
-                    Upload Your Resume
+                    {t("Upload Your Resume")}
                 </h3>
                 <p style={{ fontSize: "0.75rem", color: "var(--fg-muted)" }}>
-                    PDF only · Max 5MB · AI analysis in ~15 seconds
+                    {t("PDF only · Max 5MB · AI analysis in ~15 seconds")}
                 </p>
             </div>
 
             {/* Target Role Selector */}
             <div className="flex flex-col" style={{ gap: "6px" }}>
-                <label className="text-label">Target Job Role</label>
+                <label className="text-label">{t("Target Job Role")}</label>
                 <select
-                    aria-label="Target Role Selector"
+                    aria-label={t("Target Role Selector")}
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
                     disabled={isLoading}
@@ -115,10 +124,12 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
                     style={{ cursor: isLoading ? "not-allowed" : "pointer" }}
                 >
                     {roles.length === 0 ? (
-                        <option value="">Loading target roles...</option>
+                            <option value="">{t("Loading target roles...")}</option>
                     ) : (
                         roles.map((r) => (
-                            <option key={r} value={r}>{r}</option>
+                            <option key={r} value={r}>
+                                {locale === "zh" ? translateDynamicToChinese(r, "role") : r}
+                            </option>
                         ))
                     )}
                 </select>
@@ -146,15 +157,15 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
                     />
                     <p style={{ color: "var(--fg-secondary)", fontSize: "0.8125rem", marginBottom: "4px" }}>
                         {isDragActive ? (
-                            <span style={{ color: "var(--brand)", fontWeight: 600 }}>Drop it here!</span>
+                        <span style={{ color: "var(--brand)", fontWeight: 600 }}>{t("Drop it here!")}</span>
                         ) : (
                             <>
-                                <span style={{ color: "var(--fg-primary)", fontWeight: 500 }}>Click to upload</span>{" "}
-                                or drag &amp; drop
+                                <span style={{ color: "var(--fg-primary)", fontWeight: 500 }}>{t("Click to upload")}</span>{" "}
+                                {t("or drag & drop")}
                             </>
                         )}
                     </p>
-                    <p style={{ fontSize: "0.75rem", color: "var(--fg-muted)" }}>PDF files only</p>
+                    <p style={{ fontSize: "0.75rem", color: "var(--fg-muted)" }}>{t("PDF files only")}</p>
                 </div>
             ) : (
                 <div
@@ -170,10 +181,10 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
                             color: "var(--fg-primary)", fontSize: "0.8125rem", fontWeight: 500,
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                         }}>
-                            {file.name}
+                            {locale === "zh" ? t("Selected resume file") : file.name}
                         </p>
                         <p style={{ color: "var(--fg-muted)", fontSize: "0.75rem" }}>
-                            {(file.size / 1024).toFixed(1)} KB
+                            {(file.size / 1024).toFixed(1)} {t("KB")}
                         </p>
                     </div>
                     {status === "done" ? (
@@ -206,16 +217,16 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
                     <div style={{ textAlign: "center" }}>
                         <Loader2 size={36} className="animate-spin" style={{ margin: "0 auto 12px", color: "var(--brand)" }} />
                         <h4 className="font-display" style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "6px" }}>
-                            AI Agent is Analyzing...
+                            {t("AI Agent is Analyzing...")}
                         </h4>
                         <p style={{ fontSize: "0.75rem", color: "var(--fg-muted)" }}>
-                            Extracting skills, gaps & strengths from your resume.
+                            {t("Extracting skills, gaps & strengths from your resume.")}
                         </p>
                     </div>
 
                     <div className="flex flex-col" style={{ gap: "6px" }}>
                         <div className="flex items-center justify-between">
-                            <span style={{ fontSize: "0.7rem", color: "var(--fg-muted)", fontWeight: 600 }}>ANALYSIS PROGRESS</span>
+                            <span style={{ fontSize: "0.7rem", color: "var(--fg-muted)", fontWeight: 600 }}>{t("ANALYSIS PROGRESS")}</span>
                             <span style={{ fontSize: "0.7rem", color: "var(--brand)", fontWeight: 700 }}>{progress}%</span>
                         </div>
                         <div style={{ height: "5px", borderRadius: "99px", background: "var(--border-subtle)", overflow: "hidden" }}>
@@ -240,7 +251,7 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
                     style={{ padding: "14px", width: "100%", fontWeight: 600 }}
                 >
                     <span className="flex items-center justify-center gap-2">
-                        <Sparkles size={16} /> Analyze My Resume
+                        <Sparkles size={16} /> {t("Analyze My Resume")}
                     </span>
                 </button>
             )}
@@ -252,7 +263,7 @@ export default function UploadResumeCard({ onAnalysisComplete, provider }: Props
                     justifyContent: "center", fontSize: "0.8125rem"
                 }}>
                     <CheckCircle size={14} />
-                    Resume analyzed! Scroll down to see your results.
+                    {t("Resume analyzed! Scroll down to see your results.")}
                 </div>
             )}
 

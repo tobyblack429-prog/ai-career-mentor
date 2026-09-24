@@ -1,5 +1,6 @@
 import React from "react";
 import { Bot, User } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Props {
     msg: {
@@ -7,7 +8,6 @@ interface Props {
         content: string;
         type?: string;
     };
-    codingMode: boolean;
     isSpeaking?: boolean;
 }
 
@@ -63,11 +63,15 @@ function renderMessageContent(content: string): React.ReactNode {
     return <>{parts}</>;
 }
 
-export const ChatMessage = React.memo(({ msg, codingMode, isSpeaking }: Props) => {
+export const ChatMessage = React.memo(({ msg, isSpeaking }: Props) => {
+    const { locale } = useLanguage();
     if (msg.role === "system" || !msg.content.trim()) return null;
 
     const isInterviewer = msg.role === "interviewer" || msg.role === "interviewer_stream";
     const isCandidate = msg.role === "candidate";
+    const visibleContent = locale === "zh" && isInterviewer && !/[\u3400-\u9fff]/.test(msg.content) && /[A-Za-z]{4}/.test(msg.content)
+        ? "这条历史面试内容没有中文版本，请重新开始面试以生成中文问题。"
+        : msg.content;
 
     return (
         <div
@@ -121,7 +125,7 @@ export const ChatMessage = React.memo(({ msg, codingMode, isSpeaking }: Props) =
                     color: isCandidate ? "#ffffff" : "var(--fg-primary)",
                     fontSize: "0.875rem", lineHeight: "1.65", wordBreak: "break-word"
                 }}>
-                    {renderMessageContent(msg.content)}
+                    {renderMessageContent(visibleContent)}
                 </div>
             </div>
         </div>

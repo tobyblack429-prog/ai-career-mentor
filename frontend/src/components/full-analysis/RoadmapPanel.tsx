@@ -4,6 +4,8 @@ import ReactMarkdown from "react-markdown";
 import { CheckCircle2, Circle, Clock, Lightbulb, Terminal, Award, FileText, BookOpen, Search, Check, HelpCircle, BookmarkCheck } from "lucide-react";
 import { toggleRoadmapWeek } from "@/services/api";
 import { toast } from "react-hot-toast";
+import { useLanguage } from "@/components/LanguageProvider";
+import { translateDynamicToChinese } from "@/i18n/translations";
 
 interface Props {
     roadmap: Roadmap;
@@ -40,6 +42,8 @@ const safeString = (val: unknown): string => {
 };
 
 const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
+    const { t, locale } = useLanguage();
+    const display = (value: string, kind: "skill" | "description" = "description") => locale === "zh" ? translateDynamicToChinese(value, kind) : value;
     const [completedWeeks, setCompletedWeeks] = useState<Record<number, boolean>>({});
 
     useEffect(() => {
@@ -75,7 +79,7 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
                 await toggleRoadmapWeek(roadmap.id, weekNum, isNowComplete);
             } catch (err) {
                 console.error("Syncing progress to DB failed", err);
-                toast.error("Failed to sync progress with database");
+                toast.error(t("Failed to sync progress with database"));
             }
         }
         const rawCompleted = localStorage.getItem(`roadmap_completed_${roleKey}`);
@@ -113,35 +117,35 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                                <button onClick={() => toggleComplete(week.week)} className="btn btn-ghost btn-icon" style={{ marginTop: "4px", color: isCompleted ? "var(--accent-emerald)" : "var(--fg-muted)" }} title={isCompleted ? "Mark as incomplete" : "Mark as complete"}>
+                                <button onClick={() => toggleComplete(week.week)} className="btn btn-ghost btn-icon" style={{ marginTop: "4px", color: isCompleted ? "var(--accent-emerald)" : "var(--fg-muted)" }} title={isCompleted ? t("Mark as incomplete") : t("Mark as complete")}>
                                     {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                                 </button>
                                 <div>
                                     <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px", flexWrap: "wrap" }}>
                                         <span className="font-display" style={{ fontSize: "0.7rem", fontWeight: 800, color: isCompleted ? "var(--accent-emerald)" : "var(--accent-purple)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                                            Week {week.week}
+                                            {t(`Week ${week.week}`)}
                                         </span>
                                         <span style={{ color: "var(--fg-muted)", fontSize: "0.7rem" }}>•</span>
                                         {week.skill_gap_addressed && (
                                             <div style={{ display: "inline-flex", padding: "1px 6px", background: isCompleted ? "rgba(16,185,129,0.08)" : "rgba(168,85,247,0.08)", borderRadius: "4px", color: isCompleted ? "var(--accent-emerald)" : "var(--accent-purple)", fontSize: "0.65rem", fontWeight: 700 }}>
-                                                Targeting: {safeString(week.skill_gap_addressed)}
+                                                {t("Targeting:")} {display(safeString(week.skill_gap_addressed), "skill")}
                                             </div>
                                         )}
                                     </div>
                                     <h3 className="font-display" style={{ color: isCompleted ? "var(--fg-muted)" : "var(--fg-primary)", fontSize: "1.2rem", fontWeight: 750, margin: 0, letterSpacing: "-0.01em", transition: "color 0.3s ease", textDecoration: isCompleted ? "line-through" : "none" }}>
-                                        {week.topic}
+                                        {display(safeString(week.topic), "skill")}
                                     </h3>
                                 </div>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 {isCompleted && (
                                     <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 8px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "100px", color: "var(--accent-emerald)", fontSize: "0.7rem", fontWeight: 700 }}>
-                                        <Check size={10} strokeWidth={3} /> Completed
+                                        <Check size={10} strokeWidth={3} /> {t("Completed")}
                                     </div>
                                 )}
                                 <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "100px", color: "var(--fg-secondary)", fontWeight: 600, fontSize: "0.75rem" }}>
                                     <Clock size={10} style={{ color: "var(--accent-cyan)" }} />
-                                    <span>{week.estimated_hours} Hours</span>
+                                    <span>{week.estimated_hours} {t("Hours")}</span>
                                 </div>
                             </div>
                         </div>
@@ -149,7 +153,7 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
                         {week.why_it_matters && (
                             <div style={{ color: "var(--fg-secondary)", fontSize: "0.85rem", lineHeight: 1.5, margin: "10px 0 14px 32px", background: "rgba(56,189,248,0.02)", padding: "10px 14px", borderRadius: "10px", borderLeft: "3px solid var(--accent-cyan)", display: "flex", gap: "10px", alignItems: "flex-start" }}>
                                 <Lightbulb size={16} style={{ color: "var(--accent-amber)", flexShrink: 0, marginTop: "2px" }} />
-                                <div><strong>Why it matters:</strong> {safeString(week.why_it_matters)}</div>
+                                <div><strong>{t("Why it matters:")}</strong> {display(safeString(week.why_it_matters))}</div>
                             </div>
                         )}
 
@@ -157,13 +161,13 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
                             <div style={{ margin: "0 0 14px 32px", padding: "12px 16px", background: "linear-gradient(135deg, rgba(251,191,36,0.04) 0%, rgba(245,158,11,0.02) 100%)", border: "1px solid rgba(251,191,36,0.12)", borderRadius: "12px" }}>
                                 <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--accent-amber)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                                     <BookmarkCheck size={12} />
-                                    <span>Prerequisites — Know Before You Start</span>
+                                    <span>{t("Prerequisites — Know Before You Start")}</span>
                                 </div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                     {week.prerequisites.map((prereq: string, idx: number) => (
                                         <span key={idx} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.15)", borderRadius: "100px", fontSize: "0.75rem", color: "var(--fg-secondary)", fontWeight: 500 }}>
                                             <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: "rgba(251,191,36,0.15)", color: "var(--accent-amber)", fontSize: "0.6rem", fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{idx + 1}</span>
-                                            {prereq}
+                                            {display(prereq, "skill")}
                                         </span>
                                     ))}
                                 </div>
@@ -174,20 +178,20 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
                             <div style={{ padding: "14px 16px", background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-subtle)" }}>
                                 <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--fg-muted)", textTransform: "uppercase", marginBottom: "8px", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "6px" }}>
                                     <Terminal size={12} style={{ color: "var(--accent-purple)" }} />
-                                    <span>Capstone Project</span>
+                                    <span>{t("Capstone Project")}</span>
                                 </div>
                                 <div className="markdown-content" style={{ color: "var(--fg-secondary)", fontSize: "0.85rem", lineHeight: 1.5 }}>
-                                    <ReactMarkdown>{safeString(week.mini_project) || "No project specified."}</ReactMarkdown>
+                                    <ReactMarkdown>{display(safeString(week.mini_project)) || t("No project specified.")}</ReactMarkdown>
                                 </div>
                             </div>
                             {week.success_criteria && (
                                 <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, rgba(16,185,129,0.02) 0%, rgba(16,185,129,0.003) 100%)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(16,185,129,0.1)" }}>
                                     <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--accent-emerald)", textTransform: "uppercase", marginBottom: "8px", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "6px" }}>
                                         <Award size={12} />
-                                        <span>Success Criteria</span>
+                                        <span>{t("Success Criteria")}</span>
                                     </div>
                                     <div style={{ color: "var(--fg-secondary)", fontSize: "0.85rem", lineHeight: 1.5, fontWeight: 500 }}>
-                                        {safeString(week.success_criteria)}
+                                        {display(safeString(week.success_criteria))}
                                     </div>
                                 </div>
                             )}
@@ -197,30 +201,30 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
                             {week.youtube_resources && week.youtube_resources.length > 0 && (
                                 <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(week.topic + " tutorial")}`} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--accent-rose)", textDecoration: "none", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", background: "rgba(239,68,68,0.08)", borderRadius: "100px", border: "1px solid rgba(239,68,68,0.15)" }}>
                                     <YoutubeIcon style={{ fontSize: "12px" }} />
-                                    <span>YouTube Tutorial</span>
+                                    <span>{t("YouTube Tutorial")}</span>
                                 </a>
                             )}
                             {week.article_resources?.slice(0, 1).map((url, j) => (
                                 <a key={`art-${j}`} href={url} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--brand)", textDecoration: "none", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", background: "rgba(59,130,246,0.08)", borderRadius: "100px", border: "1px solid rgba(59,130,246,0.15)" }}>
                                     <FileText size={12} />
-                                    <span>Technical Article</span>
+                                    <span>{t("Technical Article")}</span>
                                 </a>
                             ))}
                             {week.official_docs?.slice(0, 1).map((url, j) => (
                                 <a key={`doc-${j}`} href={url} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--accent-emerald)", textDecoration: "none", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", background: "rgba(16,185,129,0.08)", borderRadius: "100px", border: "1px solid rgba(16,185,129,0.15)" }}>
                                     <BookOpen size={12} />
-                                    <span>Official Docs</span>
+                                    <span>{t("Official Docs")}</span>
                                 </a>
                             ))}
                             {week.github_resources?.slice(0, 1).map((url, j) => (
                                 <a key={`gh-${j}`} href={url} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--fg-secondary)", textDecoration: "none", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", background: "var(--bg-surface)", borderRadius: "100px", border: "1px solid var(--border-subtle)" }}>
                                     <GithubIcon style={{ fontSize: "12px" }} />
-                                    <span>GitHub Repo</span>
+                                    <span>{t("GitHub Repo")}</span>
                                 </a>
                             ))}
                             <a href={`https://www.google.com/search?q=${encodeURIComponent(week.topic + " MCQ quiz practice test online")}`} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--accent-amber)", textDecoration: "none", fontWeight: 700, fontSize: "0.75rem", padding: "6px 12px", background: "rgba(251,191,36,0.08)", borderRadius: "100px", border: "1px solid rgba(251,191,36,0.15)" }}>
                                 <CheckCircle2 size={12} />
-                                <span>Practice Test</span>
+                                <span>{t("Practice Test")}</span>
                             </a>
                         </div>
 
@@ -228,14 +232,14 @@ const RoadmapPanel: React.FC<Props> = ({ roadmap }) => {
                             <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--border-subtle)", marginLeft: "32px" }}>
                                 <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--fg-muted)", textTransform: "uppercase", marginBottom: "8px", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "6px" }}>
                                     <Search size={10} style={{ color: "var(--accent-cyan)" }} />
-                                    <span>Private Search Assist — Explore More</span>
+                                    <span>{t("Private Search Assist — Explore More")}</span>
                                 </div>
                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
                                     {week.explore_more_questions.map((question, qIdx) => (
                                         <a key={`q-${qIdx}`} href={`https://duckduckgo.com/?q=${encodeURIComponent(question)}`} target="_blank" rel="noreferrer" style={{ display: "block", padding: "10px 12px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "10px", color: "var(--fg-secondary)", fontSize: "0.75rem", fontWeight: 500, textDecoration: "none", transition: "all 0.2s ease-in-out" }}>
                                             <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
                                                 <HelpCircle size={12} style={{ color: "var(--accent-cyan)", flexShrink: 0, marginTop: "2px" }} />
-                                                <span>{question}</span>
+                                                <span>{display(question)}</span>
                                             </div>
                                         </a>
                                     ))}

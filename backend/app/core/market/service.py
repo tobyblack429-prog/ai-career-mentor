@@ -28,6 +28,7 @@ from app.core.config import settings
 # ─────────────────────────────────────────────────────────────────────────────
 
 REGION_PROFILES = {
+    "china":        {"currency": "CNY", "symbol": "¥"},
     "india":        {"currency": "INR", "symbol": "₹"},
     "usa":          {"currency": "USD", "symbol": "$"},
     "uk":           {"currency": "GBP", "symbol": "£"},
@@ -54,6 +55,11 @@ EXPERIENCE_MULTIPLIERS = {
 }
 
 CITY_TO_COUNTRY = {
+    "beijing": "china", "shanghai": "china", "shenzhen": "china", "hangzhou": "china",
+    "guangzhou": "china", "suzhou": "china", "chengdu": "china", "nanjing": "china",
+    "wuhan": "china", "wuxi": "china", "北京": "china", "上海": "china",
+    "深圳": "china", "杭州": "china", "广州": "china", "苏州": "china",
+    "成都": "china", "南京": "china", "武汉": "china", "无锡": "china",
     "bangalore": "india", "hyderabad": "india", "mumbai": "india", "pune": "india",
     "delhi": "india", "noida": "india", "gurgaon": "india", "chennai": "india",
     "ahmedabad": "india", "kolkata": "india", "kochi": "india", "bhubaneswar": "india",
@@ -291,10 +297,17 @@ async def get_live_context(role: str, location: str, seniority: Optional[str] = 
 
     current_year = datetime.datetime.now().year
     seniority_phrase = f" {seniority}" if seniority else ""
-    queries = [
-        f"{role}{seniority_phrase} jobs in {location} hiring openings {current_year}",
-        f"{role} salary and hiring companies in {location}",
-    ]
+    is_china = "china" in location.lower() or any(city in location for city in ["北京", "上海", "深圳", "杭州", "广州", "苏州", "成都", "南京", "武汉", "无锡"])
+    if is_china:
+        queries = [
+            f"{current_year} {location} {role}{seniority_phrase} 招聘 岗位 人才需求",
+            f"{current_year} {location} {role} 招聘薪酬 智联招聘 猎聘 BOSS直聘",
+        ]
+    else:
+        queries = [
+            f"{role}{seniority_phrase} jobs in {location} hiring openings {current_year}",
+            f"{role} salary and hiring companies in {location}",
+        ]
 
     all_snippets: List[str] = []
     flat_results = []
@@ -433,12 +446,17 @@ def extract_metrics_deterministic(
     # --- Extract salary numbers ---
     salary_min = None
     salary_max = None
-    salary_patterns = [
-        r"(?:₹|INR|Rs\.?)\s*([\d.]+)\s*(?:L|Lakh|lakh)",
-        r"(?:₹|INR|Rs\.?)\s*([\d,]+)",
-        r"\$([\d,]+)",
-        r"([\d.]+)\s*(?:LPA|lpa|per annum|p\.a\.)",
-    ]
+    is_china = _region_for_location(location)["currency"] == "CNY"
+    salary_patterns = (
+        [r"(?:¥|￥|CNY|人民币)\s*([\d,]+)", r"([\d,]+)\s*元\s*(?:/|每)?\s*(?:月|年)"]
+        if is_china else
+        [
+            r"(?:₹|INR|Rs\.?)\s*([\d.]+)\s*(?:L|Lakh|lakh)",
+            r"(?:₹|INR|Rs\.?)\s*([\d,]+)",
+            r"\$([\d,]+)",
+            r"([\d.]+)\s*(?:LPA|lpa|per annum|p\.a\.)",
+        ]
+    )
     for pat in salary_patterns:
         nums = re.findall(pat, context)
         if nums:
@@ -452,13 +470,14 @@ def extract_metrics_deterministic(
                 salary_min = min(parsed)
                 salary_max = max(parsed)
                 break
-            elif len(parsed) == 1:
-                salary_min = parsed[0] * 0.7
-                salary_max = parsed[0] * 1.5
-                break
+            # A single observed number is not converted into an invented range.
 
     if salary_min and salary_max:
-        salary_formatted = f"{region['symbol']}{salary_min:,.0f} – {region['symbol']}{salary_max:,.0f} per annum"
+        salary_formatted = (
+            f"{region['symbol']}{salary_min:,.0f} – {region['symbol']}{salary_max:,.0f}（来源原始口径）"
+            if is_china else
+            f"{region['symbol']}{salary_min:,.0f} – {region['symbol']}{salary_max:,.0f} per annum"
+        )
     else:
         salary_formatted = "Live salary data unavailable"
 
@@ -518,8 +537,15 @@ def _llm_summary(role: str, location: str, context: str, provider: Optional[str]
         "Analyze the context and extract real market intelligence according to the structured response model."
     )
 
+    china_instruction = (
+        "\n- The selected location is in China. Write summary, market_trend, hiring_volume, "
+        "and company hiring descriptions in Simplified Chinese. Keep only technical names and "
+        "standard abbreviations in English. Do not convert or infer missing numbers."
+        if "china" in location.lower() else ""
+    )
+
     result = llm_client.run_market_intelligence(
-        system_prompt=_SUMMARY_SYSTEM_PROMPT,
+        system_prompt=_SUMMARY_SYSTEM_PROMPT + china_instruction,
         user_content=user_content,
         response_model=MarketIntelligenceModel,
         temperature=0.2,

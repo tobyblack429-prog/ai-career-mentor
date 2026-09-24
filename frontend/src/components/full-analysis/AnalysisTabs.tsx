@@ -15,7 +15,7 @@ export default function AnalysisTabs({ activeTab, setActiveTab }: Props) {
     ];
 
     return (
-        <div style={{
+        <div className="analysis-tabs" style={{
             display: "flex", gap: "12px", marginBottom: "32px",
             borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px",
         }}>
@@ -25,6 +25,7 @@ export default function AnalysisTabs({ activeTab, setActiveTab }: Props) {
                 return (
                     <button
                         key={tab.key}
+                        className="analysis-tab"
                         onClick={() => setActiveTab(tab.key)}
                         style={{
                             background: isActive ? `${tab.color}15` : "transparent",

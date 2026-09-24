@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Send, Square, Code, Clock, Star, Target, MessageSquare, Loader2, Sparkles, Bot } from "lucide-react";
 import dynamic from "next/dynamic";
 import { ChatMessage } from "./ChatMessage";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const Editor = dynamic(
     () => import("@monaco-editor/react").catch((err) => {
@@ -28,9 +29,8 @@ const LiveTimer = React.memo(() => {
 });
 LiveTimer.displayName = "LiveTimer";
 
-const MessageList = React.memo(({ messages, codingMode, isSpeaking }: {
+const MessageList = React.memo(({ messages, isSpeaking }: {
     messages: any[];
-    codingMode: boolean;
     isSpeaking: boolean;
 }) => (
     <>
@@ -38,7 +38,6 @@ const MessageList = React.memo(({ messages, codingMode, isSpeaking }: {
             <ChatMessage
                 key={i}
                 msg={m}
-                codingMode={false}
                 isSpeaking={isSpeaking && i === messages.length - 1}
             />
         ))}
@@ -71,6 +70,7 @@ interface Props {
 }
 
 export default function InterviewInterface({ role, company, type, roleLevel, onEnd, onBack }: Props) {
+    const { t, locale } = useLanguage();
     const [messages, setMessages] = useState<any[]>([]);
     const [streamingMessage, setStreamingMessage] = useState("");
     const [inputVal, setInputVal] = useState("");
@@ -109,7 +109,6 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
     const onOpenRef = useRef<(() => void) | null>(null);
     const onCloseRef = useRef<((event: CloseEvent) => void) | null>(null);
     const onErrorRef = useRef<((event: Event) => void) | null>(null);
-    const cleanupRef = useRef<(() => void) | null>(null);
     const isMountedRef = useRef(true);
     const isReconnectingRef = useRef(false);
     const hasReceivedMessageRef = useRef(false);
@@ -196,14 +195,13 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
         hasReceivedMessageRef.current = false;
         lastMessageTimeRef.current = Date.now();
 
-        const token = localStorage.getItem("token");
         const activeProvider = localStorage.getItem("preferred_provider") || "groq";
         if (!sessionIdRef.current) {
             sessionIdRef.current = Date.now().toString();
         }
         const sessionId = sessionIdRef.current;
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-        const wsUrl = apiUrl.replace("http", "ws") + `/interview/ws/${sessionId}?role=${encodeURIComponent(role)}&company=${encodeURIComponent(company.name)}&company_tier=${company.tier}&company_style=${encodeURIComponent(company.interviewStyle)}&type=${encodeURIComponent(type)}&token=${token}&provider=${activeProvider}${roleLevel ? `&role_level=${encodeURIComponent(roleLevel)}` : ""}`;
+        const wsUrl = apiUrl.replace("http", "ws") + `/interview/ws/${sessionId}?role=${encodeURIComponent(role)}&company=${encodeURIComponent(company.name)}&company_tier=${company.tier}&company_style=${encodeURIComponent(company.interviewStyle)}&type=${encodeURIComponent(type)}&provider=${activeProvider}&language=${locale}${roleLevel ? `&role_level=${encodeURIComponent(roleLevel)}` : ""}`;
         wsUrlRef.current = wsUrl;
 
         // ── Message handler (shared across reconnects) ──
@@ -213,7 +211,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
             let data;
             try {
                 data = JSON.parse(event.data);
-            } catch (e) {
+            } catch {
                 console.error("Failed to parse WS message:", event.data);
                 return;
             }
@@ -276,7 +274,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                     setStreamingMessage("");
                     streamBufferRef.current = "";
                     if (wsRef.current) {
-                        try { wsRef.current.close(); } catch (e) { /* ignore */ }
+                        try { wsRef.current.close(); } catch { /* ignore */ }
                     }
                     return;
                 }
@@ -382,7 +380,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
             if (hasReceivedMessageRef.current && (now - lastMessageTimeRef.current) > STALE_WS_TIMEOUT) {
                 console.warn("WebSocket appears stale — forcing reconnect");
                 if (wsRef.current) {
-                    try { wsRef.current.close(); } catch (e) { /* ignore */ }
+                    try { wsRef.current.close(); } catch { /* ignore */ }
                 }
                 // onclose handler will trigger reconnect
             }
@@ -399,7 +397,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
             if (staleCheckIntervalRef.current) clearInterval(staleCheckIntervalRef.current);
             if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
             if (wsRef.current) {
-                try { wsRef.current.close(); } catch (e) { /* ignore */ }
+                try { wsRef.current.close(); } catch { /* ignore */ }
             }
             isConnectingRef.current = false;
             if (streamRafRef.current) cancelAnimationFrame(streamRafRef.current);
@@ -407,7 +405,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                 window.dispatchEvent(new Event("rateLimitUpdated"));
             }
         };
-    }, [role, type, company.name, company.tier, company.interviewStyle, flushStreamBuffer]);
+    }, [role, type, roleLevel, company.name, company.tier, company.interviewStyle, locale, flushStreamBuffer]);
 
     const stopAudio = useCallback(() => {
         if (currentAudioRef.current) {
@@ -430,7 +428,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
 
         stopAudio();
 
-        let parts = [];
+        const parts: string[] = [];
         if (inputVal.trim()) {
             parts.push(inputVal.trim());
         }
@@ -519,7 +517,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                         <div className="flex items-center" style={{ gap: "10px" }}>
                             <div className="flex items-center" style={{ gap: "5px" }}>
                                 <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent-emerald)", boxShadow: "0 0 8px var(--accent-emerald)" }} />
-                                <span style={{ fontSize: "0.75rem", color: "var(--accent-emerald)", fontWeight: 600 }}>{status}</span>
+                                <span style={{ fontSize: "0.75rem", color: "var(--accent-emerald)", fontWeight: 600 }}>{t(status)}</span>
                             </div>
                             <span style={{ color: "var(--fg-disabled)", fontSize: "0.75rem" }}>|</span>
                             <span style={{ fontSize: "0.8125rem", color: "var(--fg-secondary)" }}>
@@ -536,7 +534,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                             background: "var(--brand-glow)", border: "1px solid rgba(59, 130, 246, 0.15)"
                         }}>
                             <Sparkles size={14} style={{ color: "var(--brand)" }} />
-                            <span style={{ fontSize: "0.7rem", color: "var(--brand-light)", fontWeight: 700 }}>SPEAKING</span>
+                            <span style={{ fontSize: "0.7rem", color: "var(--brand-light)", fontWeight: 700 }}>{t("SPEAKING")}</span>
                             <div className="flex items-center" style={{ gap: "2px", height: "12px" }}>
                                 <div style={{ width: "2px", height: "6px", background: "var(--brand)", borderRadius: "1px", animation: "interview-bounce 0.8s ease-in-out infinite" }} />
                                 <div style={{ width: "2px", height: "10px", background: "var(--accent-cyan)", borderRadius: "1px", animation: "interview-bounce 0.8s ease-in-out infinite 0.15s" }} />
@@ -550,13 +548,13 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                         className="btn btn-ghost"
                         style={{ color: "var(--accent-rose)", padding: "8px 14px", fontSize: "0.8125rem" }}
                     >
-                        <Square size={14} /> End
+                        <Square size={14} /> {t("End")}
                     </button>
                 </div>
             </div>
 
             {/* Split Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "20px", flex: 1, alignItems: "start" }}>
+            <div className="interview-workspace-grid" style={{ display: "grid", gap: "20px", flex: 1, alignItems: "start" }}>
 
                 {/* Left: Chat Panel */}
                 <div className="card" style={{
@@ -569,7 +567,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                     }}>
                         <div className="flex items-center" style={{ gap: "8px" }}>
                             <MessageSquare size={15} style={{ color: "var(--brand)" }} />
-                            <span style={{ fontWeight: 600, color: "var(--fg-primary)", fontSize: "0.875rem" }}>Interview Record</span>
+                            <span style={{ fontWeight: 600, color: "var(--fg-primary)", fontSize: "0.875rem" }}>{t("Interview Record")}</span>
                         </div>
                         <span className="badge badge-brand">{Math.min(questionCount, totalQuestions)} / {totalQuestions}</span>
                     </div>
@@ -581,16 +579,15 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                         {messages.length === 0 && !streamingMessage && (
                             <div className="flex flex-col items-center justify-center" style={{ flex: 1, color: "var(--fg-muted)", gap: "10px", padding: "40px" }}>
                                 <Loader2 className="animate-spin" size={24} style={{ color: "var(--brand)" }} />
-                                <span style={{ fontSize: "0.8125rem", fontWeight: 500 }}>Spawning Interview Agent...</span>
+                                <span style={{ fontSize: "0.8125rem", fontWeight: 500 }}>{t("Spawning Interview Agent...")}</span>
                             </div>
                         )}
 
-                        <MessageList messages={messages} codingMode={codingMode} isSpeaking={isSpeaking} />
+                        <MessageList messages={messages} isSpeaking={isSpeaking} />
 
                         {streamingMessage && (
                             <ChatMessage
                                 msg={{ role: "interviewer_stream", content: streamingMessage }}
-                                codingMode={false}
                                 isSpeaking={true}
                             />
                         )}
@@ -598,7 +595,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                         {isThinking && (
                             <div className="flex items-center" style={{ gap: "6px", color: "var(--brand)", fontSize: "0.8125rem", fontWeight: 500, marginLeft: "44px", marginTop: "4px" }}>
                                 <Loader2 size={12} className="animate-spin" />
-                                <span style={{ fontStyle: "italic" }}>Agent is thinking...</span>
+                                <span style={{ fontStyle: "italic" }}>{t("Agent is thinking...")}</span>
                             </div>
                         )}
 
@@ -613,7 +610,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                 }}
                             >
                                 <Loader2 size={16} className="animate-spin" />
-                                <span>Generating your detailed feedback...</span>
+                                <span>{t("Generating your detailed feedback...")}</span>
                             </div>
                         )}
                         <div ref={messagesEndRef} />
@@ -632,7 +629,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                 <Clock size={16} style={{ color: "var(--accent-cyan)" }} />
                             </div>
                             <div>
-                                <div style={{ fontSize: "0.65rem", color: "var(--fg-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Elapsed</div>
+                                <div style={{ fontSize: "0.65rem", color: "var(--fg-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("Elapsed")}</div>
                                 <LiveTimer />
                             </div>
                         </div>
@@ -644,7 +641,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                 <Target size={16} style={{ color: "var(--brand)" }} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: "0.65rem", color: "var(--fg-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Progress</div>
+                                <div style={{ fontSize: "0.65rem", color: "var(--fg-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("Progress")}</div>
                                 <div style={{ fontSize: "1rem", color: "var(--fg-primary)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                                     Q {Math.min(questionCount, totalQuestions)}/{totalQuestions}
                                 </div>
@@ -673,13 +670,13 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                             transition: "border-color 0.2s"
                         }}>
                             <div style={{ padding: "14px 18px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-                                <span style={{ fontWeight: 600, color: "var(--fg-primary)", fontSize: "0.875rem" }}>Your Response</span>
+                                <span style={{ fontWeight: 600, color: "var(--fg-primary)", fontSize: "0.875rem" }}>{t("Your Response")}</span>
                                 <div className="flex items-center" style={{ gap: "10px" }}>
                                     <span className="badge badge-green">
                                         <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--accent-emerald)" }} />
-                                        LIVE
+                                        {t("LIVE")}
                                     </span>
-                                    <span style={{ fontSize: "0.7rem", color: "var(--fg-disabled)" }}>Shift+Enter new line</span>
+                                    <span style={{ fontSize: "0.7rem", color: "var(--fg-disabled)" }}>{t("Shift+Enter new line")}</span>
                                 </div>
                             </div>
                             <textarea
@@ -711,7 +708,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                             }}>
                                 <div className="flex items-center" style={{ gap: "6px" }}>
                                     <Code size={15} style={{ color: "var(--accent-cyan)" }} />
-                                    <span style={{ color: "var(--fg-secondary)", fontSize: "0.8125rem", fontWeight: 600 }}>Code Workspace</span>
+                                <span style={{ color: "var(--fg-secondary)", fontSize: "0.8125rem", fontWeight: 600 }}>{t("Code Workspace")}</span>
                                 </div>
                                 <select
                                     value={language}
@@ -756,7 +753,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                     fontSize: "1rem", fontWeight: 700, animation: "interview-pulse 2.5s infinite"
                                 }}
                             >
-                                <Star size={18} /> View Score & Evaluation
+                                <Star size={18} /> {t("View Score & Evaluation")}
                             </button>
                         ) : (
                             <>
@@ -781,7 +778,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                         ...(isDisabled ? { opacity: 0.5, cursor: "not-allowed" } : {})
                                     }}
                                 >
-                                    {isThinking ? "Thinking..." : "Submit Answer"} <Send size={15} />
+                                    {isThinking ? t("Thinking...") : t("Submit Answer")} <Send size={15} />
                                 </button>
                             </>
                         )}
@@ -804,9 +801,9 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                         }}>
                             <Square size={24} style={{ color: "var(--accent-rose)" }} />
                         </div>
-                        <h3 className="font-display" style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "8px" }}>End Simulation?</h3>
+                        <h3 className="font-display" style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "8px" }}>{t("End Simulation?")}</h3>
                         <p style={{ color: "var(--fg-secondary)", marginBottom: "28px", lineHeight: 1.6, fontSize: "0.8125rem" }}>
-                            Your results will be saved but the evaluation will be incomplete.
+                            {t("Your results will be saved but the evaluation will be incomplete.")}
                         </p>
                         <div className="flex" style={{ gap: "10px" }}>
                             <button
@@ -814,7 +811,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                 className="btn btn-secondary"
                                 style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)" }}
                             >
-                                Resume
+                                {t("Resume")}
                             </button>
                             <button
                                 onClick={() => {
@@ -827,7 +824,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                     background: "var(--accent-rose)", color: "white", fontWeight: 700
                                 }}
                             >
-                                End Session
+                                {t("End Session")}
                             </button>
                         </div>
                     </div>

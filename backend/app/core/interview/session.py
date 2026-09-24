@@ -32,6 +32,9 @@ def _purge_stale_sessions():
 
 def _get_user_from_token(token: str | None, db: Session) -> User | None:
     """Decode JWT token and retrieve the user."""
+    if settings.AUTH_DISABLED:
+        from app.api.deps import get_or_create_guest_user
+        return get_or_create_guest_user(db)
     if not token:
         return None
     try:
@@ -187,4 +190,3 @@ def _extract_interview_score(msg_content: str) -> float:
 
     # Default fallback
     return 75.0
-

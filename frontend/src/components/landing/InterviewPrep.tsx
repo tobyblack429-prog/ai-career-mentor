@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { ArrowRight, Brain, RefreshCcw, Sparkles } from "lucide-react";
+import { Brain, RefreshCcw, Sparkles } from "lucide-react";
 
 const COMPANIES = [
   { name: "Google", logo: "/google.svg" },

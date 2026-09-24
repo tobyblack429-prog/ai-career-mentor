@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Target, Building2, Zap, Sparkles, Loader2, Play, Search, ChevronDown, ChevronUp, X } from "lucide-react";
 import { getMarketConfig } from "@/services/api";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Props {
     onStart: (role: string, company: any, type: string, roleLevel: string) => void;
@@ -15,6 +16,7 @@ const ROLE_LEVELS = [
 ] as const;
 
 export default function InterviewWizard({ onStart, loading }: Props) {
+    const { t, locale } = useLanguage();
     const [config, setConfig] = useState<any>(null);
     const [role, setRole] = useState("");
     const [company, setCompany] = useState<any>(null);
@@ -23,6 +25,19 @@ export default function InterviewWizard({ onStart, loading }: Props) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const companyNamesZh: Record<string, string> = {
+        Google: "谷歌", Microsoft: "微软", Amazon: "亚马逊", Apple: "苹果", Adobe: "奥多比",
+        Oracle: "甲骨文", Salesforce: "赛富时", SAP: "思爱普", Meta: "元宇宙平台公司",
+        Netflix: "奈飞", Uber: "优步", Airbnb: "爱彼迎", OpenAI: "OpenAI", Anthropic: "人工智能研究公司",
+        NVIDIA: "英伟达", Intel: "英特尔", Qualcomm: "高通", Samsung: "三星", IBM: "国际商业机器公司",
+        Cisco: "思科", Nokia: "诺基亚", Ericsson: "爱立信", PayPal: "贝宝", JPMorgan: "摩根大通",
+        "Goldman Sachs": "高盛", Deloitte: "德勤", Accenture: "埃森哲", PwC: "普华永道",
+        Bosch: "博世", "Robert Bosch": "博世", "Dell Technologies": "戴尔科技", FedEx: "联邦快递",
+    };
+    const companyLabel = (name: string, index?: number) => {
+        if (locale !== "zh") return name;
+        return companyNamesZh[name] || `其他面试企业${typeof index === "number" ? ` ${index + 1}` : ""}`;
+    };
 
     useEffect(() => {
         getMarketConfig().then(data => {
@@ -48,16 +63,16 @@ export default function InterviewWizard({ onStart, loading }: Props) {
 
     const getTierLabel = (tier: string) => {
         const labels: Record<string, string> = {
-            "FAANG": "FAANG & Global Big Tech",
-            "top-indian-product": "Indian Product Leaders",
-            "indian-service": "Indian Service Sector",
-            "fintech": "Fintech & Banking",
-            "mid-product": "Growth Stage Products",
-            "hardware": "Hardware & Semiconductors",
-            "gaming": "Gaming & Metaverses",
-            "security": "Cybersecurity & Infra",
-            "hft": "High Frequency Trading (HFT)",
-            "other": "Specialized & Others"
+            "FAANG": t("FAANG & Global Big Tech"),
+            "top-indian-product": t("Indian Product Leaders"),
+            "indian-service": t("Indian Service Sector"),
+            "fintech": t("Fintech & Banking"),
+            "mid-product": t("Growth Stage Products"),
+            "hardware": t("Hardware & Semiconductors"),
+            "gaming": t("Gaming & Metaverses"),
+            "security": t("Cybersecurity & Infra"),
+            "hft": t("High Frequency Trading (HFT)"),
+            "other": t("Specialized & Others")
         };
         return labels[tier] || tier.toUpperCase();
     };
@@ -85,10 +100,10 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                         </div>
                     </div>
                     <h2 className="font-display" style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--fg-primary)", marginBottom: "6px" }}>
-                        Launch Mock Interview
+                        {t("Launch Mock Interview")}
                     </h2>
                     <p style={{ fontSize: "0.8125rem", color: "var(--fg-muted)" }}>
-                        Configure your AI-powered simulation
+                        {t("Configure your AI-powered simulation")}
                     </p>
                 </div>
 
@@ -96,7 +111,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                     {/* Role */}
                     <div>
                         <label className="text-label" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-                            <Target size={13} style={{ color: "var(--brand)" }} /> Target Role
+                            <Target size={13} style={{ color: "var(--brand)" }} /> {t("Target Role")}
                         </label>
                         <select
                             value={role}
@@ -104,14 +119,14 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                             className="input"
                             style={{ padding: "12px 14px", fontSize: "0.875rem", cursor: "pointer" }}
                         >
-                            {config.roles.map((r: string) => <option key={r} value={r}>{r}</option>)}
+                            {config.roles.map((r: string) => <option key={r} value={r}>{t(r)}</option>)}
                         </select>
                     </div>
 
                     {/* Company */}
                     <div style={{ position: "relative" }} ref={dropdownRef}>
                         <label className="text-label" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-                            <Building2 size={13} style={{ color: "var(--accent-cyan)" }} /> Target Company
+                            <Building2 size={13} style={{ color: "var(--accent-cyan)" }} /> {t("Target Company")}
                         </label>
                         <div
                             onClick={() => setIsOpen(!isOpen)}
@@ -122,7 +137,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                             }}
                         >
                             <span style={{ color: company ? "var(--fg-primary)" : "var(--fg-muted)", fontSize: "0.875rem" }}>
-                                {company ? company.name : "Select a company..."}
+                                {company ? companyLabel(company.name) : t("Select a company...")}
                             </span>
                             {isOpen ? <ChevronUp size={15} style={{ color: "var(--fg-muted)" }} /> : <ChevronDown size={15} style={{ color: "var(--fg-muted)" }} />}
                         </div>
@@ -148,7 +163,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="Search company..."
+                                            placeholder={t("Search company...")}
                                             className="input"
                                             style={{ paddingLeft: "34px", fontSize: "0.8125rem" }}
                                             autoFocus
@@ -170,7 +185,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                                 <div style={{ padding: "4px 0", overflowY: "auto", flex: 1 }}>
                                     {filteredCompanies.length === 0 ? (
                                         <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--fg-muted)", fontSize: "0.8125rem" }}>
-                                            Company not found
+                                            {t("Company not found")}
                                         </div>
                                     ) : (
                                         Object.keys(groupedFilteredCompanies).map(tier => (
@@ -181,7 +196,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                                                 }}>
                                                     {getTierLabel(tier)}
                                                 </div>
-                                                {groupedFilteredCompanies[tier].map((c: any) => (
+                                                {groupedFilteredCompanies[tier].map((c: any, companyIndex: number) => (
                                                     <div
                                                         key={c.name}
                                                         onClick={() => {
@@ -202,7 +217,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                                                             if (company?.name !== c.name) e.currentTarget.style.background = "transparent";
                                                         }}
                                                     >
-                                                        {c.name}
+                                                        {companyLabel(c.name, companyIndex)}
                                                     </div>
                                                 ))}
                                             </div>
@@ -216,7 +231,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                     {/* Role Level */}
                     <div>
                         <label className="text-label" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-                            <Target size={13} style={{ color: "var(--accent-purple)" }} /> Your Experience Level
+                            <Target size={13} style={{ color: "var(--accent-purple)" }} /> {t("Your Experience Level")}
                         </label>
                         <div className="grid grid-cols-2" style={{ gap: "10px" }}>
                             {ROLE_LEVELS.map(level => (
@@ -230,8 +245,8 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                                         ...(roleLevel !== level.id ? { background: "var(--bg-surface)" } : {})
                                     }}
                                 >
-                                    <div style={{ fontWeight: 700, marginBottom: "2px" }}>{level.label}</div>
-                                    <div style={{ fontSize: "0.6875rem", opacity: 0.7, fontWeight: 400 }}>{level.desc}</div>
+                                    <div style={{ fontWeight: 700, marginBottom: "2px" }}>{t(level.label)}</div>
+                                    <div style={{ fontSize: "0.6875rem", opacity: 0.7, fontWeight: 400 }}>{t(level.desc)}</div>
                                 </button>
                             ))}
                         </div>
@@ -240,21 +255,21 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                     {/* Type */}
                     <div>
                         <label className="text-label" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-                            <Zap size={13} /> Interview Focus
+                            <Zap size={13} /> {t("Interview Focus")}
                         </label>
                         <div className="grid grid-cols-2" style={{ gap: "10px" }}>
-                            {["technical", "behavioral"].map(t => (
+                            {["technical", "behavioral"].map(interviewType => (
                                 <button
-                                    key={t}
-                                    onClick={() => setType(t)}
-                                    className={type === t ? "btn-glow" : "btn-secondary"}
+                                    key={interviewType}
+                                    onClick={() => setType(interviewType)}
+                                    className={type === interviewType ? "btn-glow" : "btn-secondary"}
                                     style={{
                                         padding: "12px", borderRadius: "var(--radius-lg)", fontWeight: 600,
                                         fontSize: "0.8125rem", textTransform: "capitalize",
-                                        ...(type !== t ? { background: "var(--bg-surface)" } : {})
+                                        ...(type !== interviewType ? { background: "var(--bg-surface)" } : {})
                                     }}
                                 >
-                                    {t}
+                                    {t(interviewType)}
                                 </button>
                             ))}
                         </div>
@@ -270,7 +285,7 @@ export default function InterviewWizard({ onStart, loading }: Props) {
                         }}
                     >
                         {loading ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
-                        {loading ? "Initializing Agent..." : "Launch Simulation"}
+                            {loading ? t("Initializing Agent...") : t("Launch Simulation")}
                     </button>
                 </div>
             </div>

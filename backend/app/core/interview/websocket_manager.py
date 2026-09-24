@@ -272,6 +272,7 @@ async def _generate_feedback_report(websocket: WebSocket, session_id: str, sessi
     """
     completed_at_now = datetime.now(timezone.utc)
     role_level = session_data.get("role_level", "fresher")
+    language = session_data.get("language", "en")
 
     # Clean transcript — same filtering as the legacy path
     clean_transcript = []
@@ -315,7 +316,7 @@ async def _generate_feedback_report(websocket: WebSocket, session_id: str, sessi
         }
         user_content = json.dumps(payload, ensure_ascii=False)[:12000]
 
-        feedback_prompt = build_structured_feedback_prompt(role, company, interview_type, role_level)
+        feedback_prompt = build_structured_feedback_prompt(role, company, interview_type, role_level, language)
         raw = await _generate_json_non_stream(
             [{"role": "user", "content": user_content}],
             feedback_prompt,
@@ -325,7 +326,7 @@ async def _generate_feedback_report(websocket: WebSocket, session_id: str, sessi
         )
         report = parse_feedback_report(raw)
         if report is not None:
-            feedback_content = render_feedback_markdown(report)
+            feedback_content = render_feedback_markdown(report, language)
             score_values = [ps.score for ps in session_data["phase_scores"].values()]
             final_score = combine_final_score(report.overall_score, score_values)
             logger.info(f"[interview] Structured feedback OK — report {report.overall_score}, blended {final_score}")
@@ -336,6 +337,8 @@ async def _generate_feedback_report(websocket: WebSocket, session_id: str, sessi
 
     if not feedback_content:
         feedback_prompt_legacy = _build_feedback_system_prompt(role, company, interview_type, role_level)
+        if language == "zh":
+            feedback_prompt_legacy += "\nWrite the complete report in Simplified Chinese. Keep code and standard technical abbreviations unchanged."
         feedback_content = await _generate_feedback_non_stream(
             [{"role": "user", "content": f"Interview transcript:\n{transcript_text}"}],
             feedback_prompt_legacy,
@@ -371,6 +374,7 @@ async def handle_websocket_connection(
     type: str,
     provider: str,
     role_level: str = "fresher",
+    language: str = "en",
     db: Session = None
 ):
     """Orchestrates the WebSocket connection state, LLM generation, and memory sync."""
@@ -434,6 +438,12 @@ async def handle_websocket_connection(
         session_id=session_id,
         role_level=role_level
     )
+    if language == "zh":
+        system_prompt += (
+            "\n\nLANGUAGE REQUIREMENT: Conduct the entire interview in Simplified Chinese. "
+            "All questions, acknowledgements, hints, transitions, and feedback must be Chinese. "
+            "Keep only source code, technical names, and standard abbreviations in English."
+        )
 
     _purge_stale_sessions()  # Auto-purge stale cached connections
 
@@ -453,6 +463,7 @@ async def handle_websocket_connection(
             "metrics": {"invalid_response": 0, "fallback_question": 0, "hint_usage": 0, "followup_usage": 0},
             "created_at": _time.time(),
             "role_level": role_level,
+            "language": language,
         }
 
     session_data = active_sessions[active_session_key]
@@ -464,6 +475,7 @@ async def handle_websocket_connection(
     session_data.setdefault("phase_followup_count", 0)
     session_data.setdefault("phase_scores", {})
     session_data.setdefault("answer_log", [])
+    session_data.setdefault("language", language)
     session_data.setdefault("metrics", {"invalid_response": 0, "fallback_question": 0, "hint_usage": 0, "followup_usage": 0})
 
     # ── Persistent TTS Worker (lives across all messages) ──────────────────

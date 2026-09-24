@@ -20,6 +20,7 @@ def run_roadmap_structure(
     resume_analysis: dict | None = None,
     experience_level: str = "intermediate",
     learning_style: str = "balanced",
+    language: str = "en",
 ) -> list[dict]:
     """
     Roadmap Structure Agent.
@@ -195,8 +196,17 @@ def run_roadmap_structure(
             "]"
         )
 
+    localized_system_prompt = ROADMAP_SYSTEM_PROMPT
+    if language == "zh":
+        localized_system_prompt += (
+            "\n\nLANGUAGE REQUIREMENT: Return all human-readable explanatory values in Simplified Chinese. "
+            "Keep only established technical names and abbreviations in English. The `topic` field may retain an exact "
+            "curated English technical topic when required by the RAG alignment rule, and `skill_gap_addressed` must "
+            "still copy the supplied value verbatim. JSON keys must remain unchanged."
+        )
+
     result = llm_client.run_roadmap_structure(
-        system_prompt=ROADMAP_SYSTEM_PROMPT,
+        system_prompt=localized_system_prompt,
         user_content=user_content,
     )
 
@@ -230,6 +240,7 @@ def run_roadmap_details_batch(
     week_chunk: list[dict],
     target_role: str,
     provider: str | None = None,
+    language: str = "en",
 ) -> list[dict]:
     """
     Roadmap Details Batch Agent.
@@ -251,8 +262,16 @@ def run_roadmap_details_batch(
         f"{_json.dumps(week_chunk, indent=2)}"
     )
 
+    localized_system_prompt = ROADMAP_DETAILS_SYSTEM_PROMPT
+    if language == "zh":
+        localized_system_prompt += (
+            "\n\nLANGUAGE REQUIREMENT: Write mini_project, prerequisites, success_criteria, why_it_matters, "
+            "explore_more_questions, and other human-readable descriptions in Simplified Chinese. Keep exact technical "
+            "names, standard abbreviations, JSON keys, URLs, the RAG-aligned `topic`, and `skill_gap_addressed` unchanged."
+        )
+
     result = llm_client.run_roadmap_details(
-        system_prompt=ROADMAP_DETAILS_SYSTEM_PROMPT,
+        system_prompt=localized_system_prompt,
         user_content=user_content,
     )
 

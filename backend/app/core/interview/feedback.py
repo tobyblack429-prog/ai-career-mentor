@@ -21,7 +21,7 @@ from app.core.interview.prompts import build_scoring_rubric
 from app.core.interview.schemas import _coerce_string_list, _coerce_score
 
 
-def build_structured_feedback_prompt(role: str, company: str, interview_type: str = "technical", role_level: str = "fresher") -> str:
+def build_structured_feedback_prompt(role: str, company: str, interview_type: str = "technical", role_level: str = "fresher", language: str = "en") -> str:
     """System prompt for the JSON-mode final report.
 
     The feedback agent is grounded by (a) the same rubric as the legacy path and
@@ -29,6 +29,10 @@ def build_structured_feedback_prompt(role: str, company: str, interview_type: st
     single JSON object parsed by `parse_feedback_report`.
     """
     rubric = build_scoring_rubric(role, interview_type, role_level)
+    language_rule = (
+        "\nWrite every human-readable JSON string in Simplified Chinese. Keep code, technical names, and standard abbreviations unchanged.\n"
+        if language == "zh" else ""
+    )
     return (
         "You are a Senior Hiring Manager producing the final written evaluation for a mock interview.\n"
         f"Company: {company}\nRole: {role}\nInterview type: {interview_type.upper()}\nExperience level: {role_level}\n\n"
@@ -43,7 +47,7 @@ def build_structured_feedback_prompt(role: str, company: str, interview_type: st
         '  "strengths": ["max 3 items"],\n'
         '  "improvements": ["max 3 items"],\n'
         '  "advice": ["max 3 actionable study topics"]\n'
-        '}'
+        '}' + language_rule
     )
 
 
@@ -91,7 +95,7 @@ def parse_feedback_report(raw: Any) -> FeedbackReport | None:
     )
 
 
-def render_feedback_markdown(report: FeedbackReport) -> str:
+def render_feedback_markdown(report: FeedbackReport, language: str = "en") -> str:
     """Render a structured report into the exact markdown the frontend renders.
 
     Mirrors the output contract of the legacy feedback prompt
@@ -102,6 +106,20 @@ def render_feedback_markdown(report: FeedbackReport) -> str:
         if not items:
             return f"- {default}"
         return "\n".join(f"- {i[:120]}" for i in items)
+
+    if language == "zh":
+        summary = report.executive_summary or "候选人整体表现较为扎实，同时仍有明确的提升方向。"
+        return (
+            "本次模拟面试已结束，感谢你的参与。以下是详细表现分析。\n\n"
+            f"**综合评价：** {summary}\n\n"
+            "**主要优势：**\n"
+            f"{bullets(report.strengths, '沟通清晰，回答结构完整')}\n\n"
+            "**需要改进：**\n"
+            f"{bullets(report.improvements, '需要进一步巩固核心技术知识')}\n\n"
+            "**行动建议：**\n"
+            f"{bullets(report.advice, '通过实际项目练习上述主题')}\n\n"
+            f"综合得分：{int(round(report.overall_score))}/100"
+        )
 
     summary = report.executive_summary or "The candidate demonstrated a generally solid performance with clear areas to focus on."
 

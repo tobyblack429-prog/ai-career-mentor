@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Activity, RefreshCcw, TrendingUp, Users, Clock, ChevronDown,
+  RefreshCcw, TrendingUp, Users, Clock, ChevronDown,
   AlertCircle, Shield, Search, Database, Cpu, Server, Coins,
   Terminal, CheckCircle2, AlertTriangle, Target, MessageSquare,
 } from "lucide-react";

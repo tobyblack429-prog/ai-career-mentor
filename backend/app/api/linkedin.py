@@ -69,7 +69,12 @@ Required JSON schema:
 """
 
 
-def _get_fallback_linkedin_strategy(role: str, strengths: list[str], gaps: list[str]) -> dict:
+def _get_fallback_linkedin_strategy(
+    role: str,
+    strengths: list[str],
+    gaps: list[str],
+    language: str = "en",
+) -> dict:
     """Generates a high-quality programmatic fallback strategy when LLM is unavailable."""
     role_clean = role.strip()
     
@@ -115,6 +120,34 @@ def _get_fallback_linkedin_strategy(role: str, strengths: list[str], gaps: list[
         f"📫 Let's connect or reach out if you'd like to collaborate on exciting tech projects!"
     )
     
+    if language == "zh":
+        headlines = [
+            f"{role_clean}｜专注可扩展系统与工程实践 💻",
+            f"{role_clean}｜技术问题解决者 🚀｜持续创造业务价值",
+            f"{role_clean}｜持续学习｜把复杂问题转化为清晰代码 🛠️",
+        ]
+        trends = [
+            f"企业更关注具备系统设计能力的 {role_clean} 人才",
+            "招聘方重视微服务与容器化项目经验",
+            "整洁、可维护的代码架构与自动化测试能力受到持续关注",
+        ]
+        about_section = (
+            f"👋 我是一名专注于构建清晰、高效、可扩展软件方案的 {role_clean}。\n\n"
+            "💻 我拥有现代软件技术与工程实践经验，善于拆解并解决复杂工程问题。\n\n"
+            f"🚀 核心能力：\n• 技术栈：{', '.join(demanding_skills[:4])}\n"
+            "• 工程实践：敏捷开发、CI/CD、测试驱动开发（TDD）\n\n"
+            "📫 欢迎交流技术实践，也期待参与有价值的软件项目。"
+        )
+        return {
+            "headlines": headlines,
+            "about_section": about_section,
+            "demanding_skills": demanding_skills,
+            "ats_keywords_to_inject": ats_keywords,
+            "recruiter_search_trends": trends,
+            "profile_density_advice": "在职业经历中使用动作动词和量化结果；将代表项目置顶，并补充至少五项已获认可的关键技能与自定义个人主页地址。",
+            "certifications": certs,
+        }
+
     return {
         "headlines": headlines,
         "about_section": about_section,
@@ -131,6 +164,7 @@ def run_linkedin_agent(
     resume_analysis: Optional[dict] = None,
     market_analysis: Optional[dict] = None,
     provider: Optional[str] = None,
+    language: str = "en",
 ) -> dict:
     """
     LinkedIn Optimization Agent.
@@ -157,20 +191,27 @@ def run_linkedin_agent(
         )
 
         from app.core import llm_client
+        system_prompt = _LINKEDIN_SYSTEM_PROMPT
+        if language == "zh":
+            system_prompt += (
+                "\n\nLANGUAGE REQUIREMENT: Write every human-readable value in Simplified Chinese. "
+                "Keep only established technical names, product names, certifications, and standard abbreviations in English. "
+                "JSON keys must remain unchanged."
+            )
         result = llm_client.run_linkedin_strategy(
-            system_prompt=_LINKEDIN_SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             user_content=user_content,
             response_model=LinkedInStrategyModel,
         )
 
         if not result:
             logger.warning("LinkedIn agent returned no result from LLM. Using programmatic fallback.")
-            return _get_fallback_linkedin_strategy(role, strengths, gaps)
+            return _get_fallback_linkedin_strategy(role, strengths, gaps, language)
 
         return result
     except Exception as e:
         logger.warning(f"Error calling LinkedIn LLM agent: {e}. Using programmatic fallback.")
-        return _get_fallback_linkedin_strategy(role, strengths, gaps)
+        return _get_fallback_linkedin_strategy(role, strengths, gaps, language)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -180,6 +221,7 @@ def run_linkedin_agent(
 class LinkedInOptimizeRequest(BaseModel):
     target_role: str
     provider: Optional[str] = None
+    language: Optional[str] = "en"
 
 
 @router.post("/optimize")
@@ -209,7 +251,8 @@ async def optimize_linkedin(
     resume_hash = hashlib.sha256(json.dumps(resume_analysis, sort_keys=True).encode("utf-8")).hexdigest() if resume_analysis else "no_resume"
     market_hash = hashlib.sha256(json.dumps(market_analysis, sort_keys=True).encode("utf-8")).hexdigest() if market_analysis else "no_market"
 
-    cached = get_cached_response("linkedin_opt_v4", req.target_role, req.provider, resume_hash, market_hash)
+    req_language = "zh" if req.language == "zh" else "en"
+    cached = get_cached_response("linkedin_opt_v4", req.target_role, req.provider, resume_hash, market_hash, req_language)
     if cached:
         increment_usage(current_user.id, "linkedin")
         log_activity(db, current_user.id, f"Optimized LinkedIn for {req.target_role} (Cached)", "linkedin")
@@ -221,12 +264,13 @@ async def optimize_linkedin(
             resume_analysis=resume_analysis,
             market_analysis=market_analysis,
             provider=req.provider,
+            language=req_language,
         )
 
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
 
-        set_cached_response("linkedin_opt_v4", result, req.target_role, req.provider, resume_hash, market_hash)
+        set_cached_response("linkedin_opt_v4", result, req.target_role, req.provider, resume_hash, market_hash, req_language)
         increment_usage(current_user.id, "linkedin")
         log_activity(db, current_user.id, f"Optimized LinkedIn for {req.target_role}", "linkedin")
         return {"strategy": result, "cached": False}

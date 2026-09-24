@@ -8,8 +8,14 @@ import InterviewInterface from "@/components/interview/InterviewInterface";
 import InterviewHistory from "@/components/interview/InterviewHistory";
 import ReactMarkdown from "react-markdown";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function InterviewPage() {
+  const { t, locale } = useLanguage();
+  const displayInterviewText = (value: string) => {
+    if (locale !== "zh" || /[\u3400-\u9fff]/.test(value)) return value;
+    return "这条历史面试内容没有中文版本，请重新开始面试以生成中文内容。";
+  };
   const router = useRouter();
   const [view, setView] = useState<"wizard" | "active" | "result">("wizard");
   const [sessionData, setSessionData] = useState<{ role: string; company: any; type: string; roleLevel: string } | null>(null);
@@ -55,7 +61,7 @@ export default function InterviewPage() {
     try {
       await deleteInterview(id);
       setHistory((prev) => prev.filter((h) => h.id !== id));
-    } catch (err) {
+    } catch {
       console.error("Delete failed");
     }
   };
@@ -83,7 +89,7 @@ export default function InterviewPage() {
         }
       }
       setFinalFeedback(feedback);
-    } catch (err) {
+    } catch {
       console.error("Failed to load details");
     }
   };
@@ -95,13 +101,13 @@ export default function InterviewPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Sparkles size={14} style={{ color: "var(--brand)" }} />
-            <span className="text-label" style={{ color: "var(--brand)" }}>Interview</span>
+            <span className="text-label" style={{ color: "var(--brand)" }}>{t("Interview")}</span>
           </div>
           <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--fg-primary)", letterSpacing: "-0.02em" }}>
-            AI <span className="gradient-text-brand">Interviewer</span>
+            AI <span className="gradient-text-brand">{t("Interviewer")}</span>
           </h1>
           <p style={{ color: "var(--fg-secondary)", fontSize: "0.875rem", marginTop: "4px" }}>
-            Dynamic simulations for 500+ global companies.
+            {t("Dynamic simulations for 500+ global companies.")}
           </p>
         </div>
         <button
@@ -109,7 +115,7 @@ export default function InterviewPage() {
           className="btn btn-secondary btn-sm"
           style={{ display: "flex", alignItems: "center", gap: "6px" }}
         >
-          <History size={14} /> History
+          <History size={14} /> {t("History")}
         </button>
       </div>
 
@@ -142,7 +148,7 @@ export default function InterviewPage() {
                 {finalScore != null ? `${Math.round(finalScore)}%` : "--"}
               </h2>
               <p style={{ fontSize: "0.875rem", color: "var(--fg-secondary)" }}>
-                {selectedSession ? `Reviewing: ${selectedSession.target_role}` : "Interview Simulation Complete"}
+                {selectedSession ? `${t("Reviewing:")} ${t(selectedSession.target_role)}` : t("Interview Simulation Complete")}
               </p>
             </div>
 
@@ -150,24 +156,24 @@ export default function InterviewPage() {
             {finalFeedback && (
               <div className="card" style={{ padding: "24px", marginBottom: "24px" }}>
                 <h3 className="flex items-center gap-2" style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "16px" }}>
-                  <Sparkles size={16} style={{ color: "var(--brand)" }} /> Performance Evaluation
+                  <Sparkles size={16} style={{ color: "var(--brand)" }} /> {t("Performance Evaluation")}
                 </h3>
                 <div style={{ fontSize: "0.8125rem", lineHeight: 1.7, color: "var(--fg-secondary)" }}>
                   <ReactMarkdown
                     components={{
-                      h3: ({ node, ...props }) => (
+                      h3: ({ ...props }) => (
                         <h4 style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--brand)", marginTop: "16px", marginBottom: "6px" }} {...props} />
                       ),
-                      strong: ({ node, ...props }) => (
+                      strong: ({ ...props }) => (
                         <strong style={{ color: "var(--fg-primary)", fontWeight: 700 }} {...props} />
                       ),
-                      ul: ({ node, ...props }) => (
+                      ul: ({ ...props }) => (
                         <ul style={{ listStyleType: "disc", paddingLeft: "18px", margin: "8px 0" }} {...props} />
                       ),
-                      li: ({ node, ...props }) => <li style={{ marginBottom: "4px" }} {...props} />,
+                      li: ({ ...props }) => <li style={{ marginBottom: "4px" }} {...props} />,
                     }}
                   >
-                    {finalFeedback.split(/OVERALL SCORE\s*:/i)[0].trim()}
+                    {displayInterviewText(finalFeedback.split(/OVERALL SCORE\s*:/i)[0].trim())}
                   </ReactMarkdown>
                 </div>
               </div>
@@ -176,16 +182,16 @@ export default function InterviewPage() {
             {/* Transcript */}
             {selectedSession?.chat_history && (
               <div data-lenis-prevent className="card" style={{ padding: "20px", maxHeight: "360px", overflowY: "auto", marginBottom: "24px" }}>
-                <h3 className="text-label" style={{ marginBottom: "14px" }}>Interview Transcript</h3>
+                <h3 className="text-label" style={{ marginBottom: "14px" }}>{t("Interview Transcript")}</h3>
                 <div className="flex flex-col" style={{ gap: "14px" }}>
                   {selectedSession.chat_history
                     .filter((m: any) => m.role !== "system")
                     .map((msg: any, i: number) => (
                       <div key={i} style={{ borderLeft: `2px solid ${msg.role === "interviewer" ? "var(--brand)" : "var(--accent-cyan)"}`, paddingLeft: "12px" }}>
                         <div style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", color: msg.role === "interviewer" ? "var(--brand)" : "var(--accent-cyan)", marginBottom: "3px" }}>
-                          {msg.role === "interviewer" ? "Interviewer" : "You"}
+                          {msg.role === "interviewer" ? t("Interviewer") : t("You")}
                         </div>
-                        <div style={{ fontSize: "0.8125rem", color: "var(--fg-secondary)", lineHeight: 1.6 }}>{msg.content}</div>
+                        <div style={{ fontSize: "0.8125rem", color: "var(--fg-secondary)", lineHeight: 1.6 }}>{displayInterviewText(msg.content)}</div>
                       </div>
                     ))}
                 </div>
@@ -198,7 +204,7 @@ export default function InterviewPage() {
                 className="btn btn-primary"
                 style={{ padding: "12px 24px", fontWeight: 600 }}
               >
-                <RotateCcw size={15} /> Back to Dashboard
+                <RotateCcw size={15} /> {t("Back to Dashboard")}
               </button>
             </div>
           </div>
@@ -236,10 +242,10 @@ export default function InterviewPage() {
               <FileText size={24} />
             </div>
             <h3 className="font-display" style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "8px" }}>
-              Resume Analysis Required
+              {t("Resume Analysis Required")}
             </h3>
             <p style={{ fontSize: "0.8125rem", color: "var(--fg-secondary)", lineHeight: 1.6, marginBottom: "24px" }}>
-              Technical interviews require a parsed resume to customize questions. Please upload your resume first.
+              {t("Technical interviews require a parsed resume to customize questions. Please upload your resume first.")}
             </p>
             <div className="flex flex-col" style={{ gap: "8px" }}>
               <button
@@ -247,14 +253,14 @@ export default function InterviewPage() {
                 className="btn btn-primary w-full"
                 style={{ padding: "11px", fontWeight: 600 }}
               >
-                Go to Resume Upload
+                {t("Go to Resume Upload")}
               </button>
               <button
                 onClick={() => setShowResumeModal(false)}
                 className="btn btn-secondary w-full"
                 style={{ padding: "11px", fontWeight: 600 }}
               >
-                Cancel
+                {t("Cancel")}
               </button>
             </div>
           </div>

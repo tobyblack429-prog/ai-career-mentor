@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 
@@ -11,11 +11,6 @@ const navLinks = [
 
 export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    useEffect(() => {
-        setIsAuthenticated(!!localStorage.getItem("token"));
-    }, []);
 
     return (
         <nav
@@ -80,13 +75,13 @@ export default function Navbar() {
 
                 {/* CTA Button */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <Link href={isAuthenticated ? "/dashboard" : "/login"}>
+                    <Link href="/dashboard">
                         <button
                             className="btn-glow"
                             style={{ padding: "10px 22px", fontSize: "14px", fontWeight: 600, background: "linear-gradient(135deg, #10b981, #3b82f6)", border: "none", color: "white", borderRadius: "10px", cursor: "pointer" }}
                             id="navbar-get-started-btn"
                         >
-                            <span>{isAuthenticated ? "Go to Dashboard" : "Get Started Free"}</span>
+                            <span>Open Career Workspace</span>
                         </button>
                     </Link>
                     {/* Mobile menu button */}

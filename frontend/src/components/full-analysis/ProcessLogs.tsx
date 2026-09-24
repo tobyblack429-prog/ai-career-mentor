@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { CheckCircle2, Circle, Loader2, AlertCircle, Briefcase, TrendingUp, Activity, Zap } from "lucide-react";
+import { CheckCircle2, Loader2, Briefcase, TrendingUp, Zap } from "lucide-react";
 
 interface Props {
     logs: string[];
@@ -7,7 +7,7 @@ interface Props {
     status: "idle" | "loading" | "done" | "error";
 }
 
-export default function ProcessLogs({ logs, errors, status }: Props) {
+export default function ProcessLogs({ logs, status }: Props) {
     const consoleRef = useRef<HTMLDivElement>(null);
 
     // Determine which stages are complete based on log patterns
@@ -51,7 +51,7 @@ export default function ProcessLogs({ logs, errors, status }: Props) {
     return (
         <div style={{ maxWidth: "800px", margin: "0 auto" }} className="animate-fade-up">
             {/* Visual Timeline */}
-            <div style={{ 
+            <div className="analysis-process-steps" style={{
                 display: "grid", 
                 gridTemplateColumns: "repeat(4, 1fr)", 
                 gap: "12px", 

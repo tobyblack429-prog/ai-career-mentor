@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Zap, Target, Activity, Sparkles, LayoutDashboard,
   TrendingUp, Flame, BookOpen, Trophy, History, BrainCircuit,
   FileText, Map, MessageSquare, Clock,
-  CheckCircle2, Lock, HelpCircle, RotateCcw,
+  Lock, HelpCircle,
 } from "lucide-react";
 import { getUserStats } from "@/services/api";
 import { formatDisplayName } from "@/utils/formatName";
@@ -16,10 +15,6 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   LineChart, Line, CartesianGrid,
 } from "recharts";
-
-const DAILY_LIMITS: Record<string, number> = {
-  resume: 1, roadmap: 1, full_analysis: 1, linkedin: 1, interview: 1, market: 1,
-};
 
 const FEATURE_LIMIT_CONFIG = [
   { key: "resume", label: "Resume Scans", shortDesc: "1 ATS Audit / day", icon: FileText, dailyCap: 1, cooldownRule: "2-Day Gap Lock", color: "#3b82f6", bgGlow: "rgba(59, 130, 246, 0.12)" },
@@ -40,8 +35,7 @@ function formatCountdown(seconds: number): string {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [userName, setUserName] = useState("User");
+  const [userName, setUserName] = useState("Local User");
   const [usageData, setUsageData] = useState<Record<string, number>>({});
   const [gapBlocks, setGapBlocks] = useState<Record<string, number>>({});
   const [activityLog, setActivityLog] = useState<{ label: string; time: string; color: string }[]>([]);
@@ -60,15 +54,13 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) { router.replace("/login"); return; }
     const storedName = localStorage.getItem("userName") || "";
     const storedEmail = localStorage.getItem("userEmail") || "";
     const displayName = storedName && storedName !== "Administrator"
       ? storedName
       : storedEmail
         ? formatDisplayName(storedEmail.split("@")[0])
-        : "User";
+        : "Local User";
     setUserName(displayName);
 
     const loadStats = () => {
@@ -127,7 +119,7 @@ export default function DashboardPage() {
     loadStats();
     window.addEventListener("rateLimitUpdated", loadStats);
     return () => window.removeEventListener("rateLimitUpdated", loadStats);
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const handler = () => {

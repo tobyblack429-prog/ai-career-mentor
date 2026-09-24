@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     q: "How is my data handled?",
-    a: "Your resume is processed in-memory for analysis and saved to your encrypted database for personalization (so the roadmap targets YOUR skill gaps and the interviewer asks about YOUR projects). Account data is secured via JWT authentication with bcrypt-hashed passwords.",
+    a: "Your resume is processed for analysis and saved in the local workspace database so roadmaps and interviews can reuse your context. No registration or login step is required in local workspace mode.",
   },
   {
     q: "What happens if an AI provider goes down?",

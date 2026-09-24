@@ -10,17 +10,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
-    {
-      url: `${BASE_URL}/login`,
+    ...["resume", "roadmap", "market", "linkedin", "interview", "full-analysis"].map((page) => ({
+      url: `${BASE_URL}/dashboard/${page}`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${BASE_URL}/register`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
   ];
 }

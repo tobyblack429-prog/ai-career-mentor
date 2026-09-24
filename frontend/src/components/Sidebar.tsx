@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileText, Map, TrendingUp,
-  MessageSquare, BrainCircuit, Settings, LogOut, Shield,
+  MessageSquare, BrainCircuit, Settings, Shield,
 } from "lucide-react";
 import { formatDisplayName } from "@/utils/formatName";
+import { useLanguage } from "./LanguageProvider";
 
 const NAV = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
@@ -21,9 +22,9 @@ const NAV = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [userName, setUserName] = useState("User");
-  const [initials, setInitials] = useState("U");
+  const { t, locale } = useLanguage();
+  const [userName, setUserName] = useState("Local User");
+  const [initials, setInitials] = useState("LU");
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function Sidebar() {
         ? storedName
         : storedEmail
           ? formatDisplayName(storedEmail.split("@")[0])
-          : "User";
+          : "Local User";
       setUserName(n);
       setInitials(n.slice(0, 2).toUpperCase());
       setUserEmail(storedEmail);
@@ -43,13 +44,6 @@ export default function Sidebar() {
     window.addEventListener("storage", load);
     return () => window.removeEventListener("storage", load);
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("userName");
-    router.replace("/login");
-  };
 
   return (
     <aside
@@ -63,14 +57,14 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-3 pt-4 pb-3">
         <Link href="/" className="flex items-center gap-2.5 no-underline" style={{ padding: "6px 8px" }}>
-          <img src="/icon.svg" alt="CareerMentor.ai" className="w-8 h-8 object-contain shrink-0" />
+          <img src="/icon.svg" alt={locale === "zh" ? "职业导师" : "CareerMentor.ai"} className="w-8 h-8 object-contain shrink-0" />
           <div className="flex flex-col">
             <span className="font-display font-semibold" style={{ fontSize: "0.8125rem", color: "var(--fg-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-              CareerMentor
-              <span style={{ color: "var(--brand)" }}>.ai</span>
+              {locale === "zh" ? "职业导师" : "CareerMentor"}
+              {locale === "en" && <span style={{ color: "var(--brand)" }}>.ai</span>}
             </span>
             <span style={{ fontSize: "0.625rem", color: "var(--fg-muted)", letterSpacing: "0.04em", lineHeight: 1.2 }}>
-              AI Career Coach
+              {t("AI Career Coach")}
             </span>
           </div>
         </Link>
@@ -94,7 +88,7 @@ export default function Sidebar() {
               }}
             >
               <Icon size={15} strokeWidth={active ? 2 : 1.5} />
-              <span className="flex-1">{label}</span>
+              <span className="flex-1">{t(label)}</span>
               {active && (
                 <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "var(--brand)" }} />
               )}
@@ -115,7 +109,7 @@ export default function Sidebar() {
             }}
           >
             <Shield size={15} strokeWidth={pathname === "/dashboard/admin/observability" ? 2 : 1.5} />
-            <span className="flex-1">Admin Console</span>
+            <span className="flex-1">{t("Admin Console")}</span>
           </Link>
         )}
       </nav>
@@ -128,7 +122,7 @@ export default function Sidebar() {
           color: pathname === "/dashboard/settings" ? "var(--brand-light)" : "var(--fg-muted)",
         }}>
           <Settings size={14} strokeWidth={1.5} />
-          <span>Settings</span>
+          <span>{t("Settings")}</span>
         </Link>
 
         <div
@@ -152,33 +146,14 @@ export default function Sidebar() {
               color: "white",
             }}
           >
-            {initials}
+            {userName === "Local User" && locale === "zh" ? "本" : initials}
           </div>
           <div className="flex-1 min-w-0">
             <div className="truncate" style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--fg-primary)", lineHeight: 1.2 }}>
-              {userName}
+              {userName === "Local User" ? t(userName) : <span data-i18n-ignore="true">{userName}</span>}
             </div>
-            <div style={{ fontSize: "0.625rem", color: "var(--fg-muted)", lineHeight: 1.2 }}>Free plan</div>
+            <div style={{ fontSize: "0.625rem", color: "var(--fg-muted)", lineHeight: 1.2 }}>{t("Local workspace")}</div>
           </div>
-          <button
-            suppressHydrationWarning
-            onClick={handleLogout}
-            title="Log out"
-            className="flex items-center justify-center"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--fg-muted)",
-              padding: "3px",
-              borderRadius: "var(--radius-sm)",
-              transition: "color 0.15s",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fb7185"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--fg-muted)"; }}
-          >
-            <LogOut size={13} strokeWidth={1.5} />
-          </button>
         </div>
       </div>
     </aside>

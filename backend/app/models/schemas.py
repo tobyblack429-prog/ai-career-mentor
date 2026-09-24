@@ -62,6 +62,7 @@ class RoadmapRequest(BaseModel):
     provider: Optional[str] = None
     experience_level: Optional[str] = "intermediate"
     learning_style: Optional[str] = "balanced"
+    language: Optional[str] = "en"
 
 
 class RoadmapWeek(BaseModel):

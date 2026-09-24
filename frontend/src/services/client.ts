@@ -6,13 +6,6 @@ const client = axios.create({
     headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT token to every request if available
-client.interceptors.request.use((config) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-});
-
 // Global response interceptor
 client.interceptors.response.use(
     (response) => response,
@@ -26,36 +19,9 @@ client.interceptors.response.use(
             });
             error.message = detail;
         } else if (error.response?.status === 401 && !url.includes("/auth/")) {
-            const originalRequest = error.config as any;
-            const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
-
-            if (refreshToken && originalRequest && !originalRequest._retry) {
-                originalRequest._retry = true;
-                try {
-                    const { data } = await axios.post(
-                        `${client.defaults.baseURL}/auth/refresh`,
-                        { refresh_token: refreshToken }
-                    );
-                    localStorage.setItem("token", data.access_token);
-                    if (data.refresh_token) localStorage.setItem("refreshToken", data.refresh_token);
-                    if (data.name) localStorage.setItem("userName", data.name);
-                    originalRequest.headers = originalRequest.headers || {};
-                    originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
-                    return client(originalRequest);
-                } catch {
-                    localStorage.removeItem("refreshToken");
-                }
-            }
-
-            toast.error("Session expired. Please log in again.", {
+            toast.error("The local workspace could not access this feature.", {
                 style: { background: "#333", color: "#fff" },
             });
-            if (typeof window !== "undefined") {
-                localStorage.removeItem("token");
-                localStorage.removeItem("refreshToken");
-                localStorage.removeItem("userName");
-                setTimeout(() => { window.location.href = "/login"; }, 1000);
-            }
         }
         return Promise.reject(error);
     }
@@ -69,7 +35,5 @@ export const getBaseUrl = (): string =>
 
 /** Returns Authorization header for use with native fetch() calls. */
 export const getAuthHeaders = (): Record<string, string> => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return {};
 };
-

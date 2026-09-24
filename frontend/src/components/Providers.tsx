@@ -19,12 +19,10 @@ if (typeof window !== "undefined") {
   };
 }
 
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ReactNode, useEffect } from "react";
 import Lenis from "lenis";
 import MobileBlocker from "./MobileBlocker";
-
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+import { LanguageProvider } from "./LanguageProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -54,12 +52,10 @@ export function Providers({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Always wrap with GoogleOAuthProvider to prevent crash during build/prerender
-  // even if the clientId is empty.
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || "dummy-id-for-build"}>
+    <LanguageProvider>
       <MobileBlocker />
       {children}
-    </GoogleOAuthProvider>
+    </LanguageProvider>
   );
 }

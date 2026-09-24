@@ -188,6 +188,7 @@ async def get_user_stats(
 
     return {
         "lastResumeAnalysis": resume_analysis,
+        "lastResumeFilename": last_resume.filename if last_resume else None,
         "usageToday": usage_today,
         "gapBlocks": gap_blocks,
         "weeklyActivity": weekly_activity,

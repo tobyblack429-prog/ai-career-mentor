@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import { Menu, X } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { t, locale } = useLanguage();
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -66,6 +68,7 @@ export default function DashboardLayout({
           >
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label={t(sidebarOpen ? "Close navigation" : "Open navigation")}
               className="flex items-center justify-center"
               style={{
                 width: "32px",
@@ -80,7 +83,8 @@ export default function DashboardLayout({
               {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
             </button>
             <span className="font-display font-semibold" style={{ fontSize: "0.8125rem", color: "var(--fg-primary)" }}>
-              CareerMentor<span style={{ color: "var(--brand)" }}>.ai</span>
+              {locale === "zh" ? "职业导师" : "CareerMentor"}
+              {locale === "en" && <span style={{ color: "var(--brand)" }}>.ai</span>}
             </span>
             <div style={{ width: "32px" }} />
           </div>

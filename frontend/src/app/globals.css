@@ -135,7 +135,8 @@ body {
 }
 
 .text-label {
-  font-size: 0.6875rem;
+  /* Keep compact labels readable for Chinese UI copy. */
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -143,7 +144,7 @@ body {
 }
 
 .text-label-brand {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -193,7 +194,7 @@ body {
   justify-content: center;
   gap: 8px;
   font-weight: 500;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1;
   border: none;
   cursor: pointer;
@@ -250,7 +251,7 @@ body {
   background: rgba(244, 63, 94, 0.15);
 }
 
-.btn-sm { padding: 7px 12px; font-size: 0.75rem; }
+.btn-sm { padding: 7px 12px; font-size: 0.8125rem; }
 .btn-lg { padding: 12px 24px; font-size: 0.875rem; }
 .btn-icon { padding: 8px; }
 
@@ -315,7 +316,7 @@ body {
   gap: 5px;
   padding: 3px 10px;
   border-radius: 99px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -360,7 +361,7 @@ body {
   padding: 8px 12px;
   border-radius: var(--radius-md);
   text-decoration: none;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--fg-muted);
   transition: all 0.12s ease;
@@ -450,7 +451,13 @@ body {
   .auth-right-panel { width: 100% !important; padding: 24px 20px !important; }
 
   h1 { font-size: clamp(1.5rem, 5vw, 2rem) !important; }
+
+  .linkedin-two-column,
+  .interview-workspace-grid { grid-template-columns: 1fr !important; }
 }
+
+.linkedin-two-column { grid-template-columns: 1fr 1fr; }
+.interview-workspace-grid { grid-template-columns: 1.1fr 0.9fr; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DASHBOARD GRID
@@ -471,10 +478,173 @@ body {
 /* Toast */
 [data-hot-toast] {
   font-family: "Inter", sans-serif !important;
-  font-size: 0.8125rem !important;
+  font-size: 0.875rem !important;
 }
 
 /* Lenis */
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
+
+/* Global Chinese / English switcher */
+.language-switcher {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 4px 6px 4px 9px;
+  color: var(--fg-muted);
+  background: rgba(10, 15, 28, 0.82);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   READABLE UI SCALE
+   The product is primarily Chinese-language. Tailwind's default compact
+   utilities (12px and below) are too small for body copy, metadata and
+   controls, especially on high-density laptop screens. Keep decorative
+   micro-copy scoped to its own components, while lifting repeated UI text
+   to a legible minimum.
+═══════════════════════════════════════════════════════════════════════════ */
+.text-xs { font-size: 0.8125rem !important; line-height: 1.5; }
+.text-2xs { font-size: 0.75rem !important; line-height: 1.45; }
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.75rem !important;
+  line-height: 1.45;
+}
+
+/* Labels and metadata remain compact, but never become difficult to scan. */
+.text-\[12px\] { font-size: 0.8125rem !important; line-height: 1.45; }
+
+/* A few data panels use inline sizes instead of Tailwind utilities. Normalize
+   those repeated metadata sizes as well; SVG chart ticks stay untouched. */
+*[style*="font-size:10px"],
+*[style*="font-size: 10px"],
+*[style*="font-size:11px"],
+*[style*="font-size: 11px"],
+*[style*="font-size:12px"],
+*[style*="font-size: 12px"],
+*[style*="font-size:0.5625rem"],
+*[style*="font-size: 0.5625rem"],
+*[style*="font-size:0.6rem"],
+*[style*="font-size: 0.6rem"],
+*[style*="font-size:0.625rem"],
+*[style*="font-size: 0.625rem"],
+*[style*="font-size:0.65rem"],
+*[style*="font-size: 0.65rem"],
+*[style*="font-size:0.6875rem"],
+*[style*="font-size: 0.6875rem"],
+*[style*="font-size:0.7rem"],
+*[style*="font-size: 0.7rem"],
+*[style*="font-size:0.72rem"],
+*[style*="font-size: 0.72rem"],
+*[style*="font-size:0.74rem"],
+*[style*="font-size: 0.74rem"],
+*[style*="font-size:0.75rem"],
+*[style*="font-size: 0.75rem"],
+*[style*="font-size:0.78rem"],
+*[style*="font-size: 0.78rem"],
+*[style*="font-size:0.8rem"],
+*[style*="font-size: 0.8rem"],
+*[style*="font-size:0.8125rem"],
+*[style*="font-size: 0.8125rem"] {
+  font-size: 0.875rem !important;
+  line-height: 1.5;
+}
+
+/* Prevent enlarged Chinese labels from forcing cards and toolbar buttons wider. */
+button,
+[role="button"] {
+  line-height: 1.35;
+}
+
+@media (max-width: 768px) {
+  .text-xs { font-size: 0.8125rem !important; }
+  .text-\[8px\],
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-\[11px\],
+  .text-\[12px\] {
+    font-size: 0.75rem !important;
+  }
+}
+
+.language-switcher button {
+  min-width: 32px;
+  height: 24px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--fg-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.language-icon {
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.language-switcher button:hover { color: var(--fg-primary); }
+
+.language-switcher button.active {
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.28);
+}
+
+.language-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--border-default);
+}
+
+html[data-locale="zh"] body {
+  font-family: "Inter", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+}
+
+@media (max-width: 768px) {
+  .language-switcher {
+    top: 7px;
+    right: 10px;
+    height: 34px;
+  }
+
+  /* Keep dashboard summary cards and the combined-analysis tabs inside the
+     narrow viewport after the readable type scale is applied. */
+  .stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .analysis-tabs {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .analysis-tab {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .analysis-process-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

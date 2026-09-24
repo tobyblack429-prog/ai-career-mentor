@@ -62,7 +62,7 @@ export default function Hero() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
           <Link
-            href="/register"
+            href="/dashboard"
             className="btn btn-primary w-full sm:w-auto"
             style={{ padding: "16px 36px", fontSize: "0.8rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}
           >

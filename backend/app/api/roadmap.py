@@ -163,6 +163,7 @@ async def generate_roadmap(
         # ── Learning Style & Experience Preferences from request ───────────────────────
         req_exp_level = getattr(body, "experience_level", "intermediate") or "intermediate"
         req_style = getattr(body, "learning_style", "balanced") or "balanced"
+        req_language = "zh" if getattr(body, "language", "en") == "zh" else "en"
 
         # ── Retrieve latest parsed Resume for candidate profile context ──────────────────
         resume_analysis = await asyncio.to_thread(_get_latest_resume_content, db, current_user.id)
@@ -171,7 +172,7 @@ async def generate_roadmap(
 
         # ── Cache check ────────────────────────────────────────────────────────────
         gaps_key = "-".join(sorted(skill_gaps))
-        cached_weeks_dicts = get_cached_response("roadmap_v4", target_role, gaps_key, body.provider, req_exp_level, req_style, resume_hash)
+        cached_weeks_dicts = get_cached_response("roadmap_v4", target_role, gaps_key, body.provider, req_exp_level, req_style, resume_hash, req_language)
         if cached_weeks_dicts:
             weeks_objs = [RoadmapWeek(**w) for w in cached_weeks_dicts]
             steps_data = []
@@ -205,11 +206,12 @@ async def generate_roadmap(
             resume_analysis=resume_analysis,
             experience_level=req_exp_level,
             learning_style=req_style,
+            language=req_language,
         )
 
         if not structure:
             logger.warning("roadmap: structure empty, using programmatic fallback")
-            weeks = _generate_fallback_roadmap(target_role, skill_gaps)
+            weeks = _generate_fallback_roadmap(target_role, skill_gaps, req_language)
         else:
             # Batch detail generation: 3 parallel chunks of 3, 3, 2 weeks
             chunk_1 = structure[0:3]
@@ -217,9 +219,9 @@ async def generate_roadmap(
             chunk_3 = structure[6:]
 
             batch_results = await asyncio.gather(
-                asyncio.to_thread(run_roadmap_details_batch, chunk_1, target_role, None),
-                asyncio.to_thread(run_roadmap_details_batch, chunk_2, target_role, None),
-                asyncio.to_thread(run_roadmap_details_batch, chunk_3, target_role, None),
+                asyncio.to_thread(run_roadmap_details_batch, chunk_1, target_role, None, req_language),
+                asyncio.to_thread(run_roadmap_details_batch, chunk_2, target_role, None, req_language),
+                asyncio.to_thread(run_roadmap_details_batch, chunk_3, target_role, None, req_language),
             )
 
             # Flatten + merge with structure fields
@@ -235,18 +237,18 @@ async def generate_roadmap(
             except (ValueError, Exception) as parse_err:
                 logger.warning(f"roadmap: batch parse failed ({parse_err}), attempting repair via fallback")
                 repair_structure = await asyncio.to_thread(
-                    run_roadmap_structure, target_role=target_role, skill_gaps=skill_gaps
+                    run_roadmap_structure, target_role=target_role, skill_gaps=skill_gaps, language=req_language
                 )
                 if repair_structure:
                     weeks = [_normalise_week(w, i) for i, w in enumerate(repair_structure[:8])]
                     while len(weeks) < 8:
                         last = weeks[-1].copy() if weeks else {}
                         last["week"] = len(weeks) + 1
-                        last["topic"] = f"Advanced Capstone — {target_role}"
-                        last["mini_project"] = "Build and deploy a production-grade component."
+                        last["topic"] = f"{target_role} 综合项目" if req_language == "zh" else f"Advanced Capstone — {target_role}"
+                        last["mini_project"] = "构建并部署一个达到生产要求的组件。" if req_language == "zh" else "Build and deploy a production-grade component."
                         weeks.append(last)
                 else:
-                    weeks = _generate_fallback_roadmap(target_role, skill_gaps)
+                    weeks = _generate_fallback_roadmap(target_role, skill_gaps, req_language)
 
         logger.info(f"roadmap/generate: built {len(weeks)}-week roadmap for '{target_role}'. Enriching resources...")
 
@@ -273,7 +275,7 @@ async def generate_roadmap(
         except Exception as db_err:
             logger.error(f"Failed to save roadmap to DB for user {current_user.id}: {db_err}")
 
-        set_cached_response("roadmap_v4", [w.model_dump() for w in weeks_objs], target_role, gaps_key, body.provider, req_exp_level, req_style, resume_hash)
+        set_cached_response("roadmap_v4", [w.model_dump() for w in weeks_objs], target_role, gaps_key, body.provider, req_exp_level, req_style, resume_hash, req_language)
         await asyncio.to_thread(
             log_activity,
             db,
@@ -359,6 +361,5 @@ async def toggle_week(
         "message": f"Week {week_number} completion updated",
         "weeks": updated_steps
     }
-
 
 

@@ -14,6 +14,8 @@ import {
     Briefcase,
 } from "lucide-react";
 import type { ResumeAnalysis } from "@/types";
+import { useLanguage } from "./LanguageProvider";
+import { translateDynamicToChinese } from "@/i18n/translations";
 
 interface Props {
     analysis: ResumeAnalysis;
@@ -152,6 +154,7 @@ function safeBreakdownValue(bd: any, key: string): number {
 export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
     const [expanded, setExpanded] = useState(true);
     const [mounted, setMounted] = useState(false);
+    const { t, locale } = useLanguage();
 
     useEffect(() => {
         const t = setTimeout(() => setMounted(true), 80);
@@ -182,6 +185,27 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
         : 0;
     const totalGoldSkills = rag_benchmarks ? rag_benchmarks.gold_standard_skills.length : 0;
     const skillMatchPercent = totalGoldSkills > 0 ? Math.round((matchCount / totalGoldSkills) * 100) : 0;
+    // API/LLM values are presentation-only translations. The analysis object,
+    // including scores, remains exactly as returned by the backend.
+    const localizedSkill = (value: string) =>
+        locale === "zh" ? translateDynamicToChinese(value, "skill") : value;
+    const localizedExperience = (value: string) =>
+        locale === "zh" ? translateDynamicToChinese(value, "description") : value;
+    const localizedFilename = locale === "zh"
+        ? translateDynamicToChinese(filename, "filename")
+        : filename;
+    const experienceTitle = years_of_experience <= 0
+        ? t("🎓 Fresher / No Professional Experience")
+        : years_of_experience < 1
+            ? (() => {
+                const months = Math.round(years_of_experience * 12);
+                return locale === "zh"
+                    ? `${months} 个月`
+                    : `${months} Month${months === 1 ? "" : "s"}`;
+            })()
+            : locale === "zh"
+                ? `${years_of_experience} 年工作经验`
+                : `${years_of_experience} Years of Experience`;
 
     return (
         <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(24px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}>
@@ -193,10 +217,10 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                     </div>
                     <div>
                         <h2 className="font-display" style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "2px" }}>
-                            Resume Analysis Results
+                            {t("Resume Analysis Results")}
                         </h2>
                         <p style={{ fontSize: "12px", color: "var(--fg-muted)" }}>
-                            {filename} · {technical_skills.length + soft_skills.length} skills found · {years_of_experience} yr{years_of_experience !== 1 ? "s" : ""} experience
+                            <span data-i18n-ignore="true">{localizedFilename}</span> · {technical_skills.length + soft_skills.length} {t("skills found ·")} {years_of_experience} {t("Years")}
                         </p>
                     </div>
                 </div>
@@ -209,7 +233,7 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                     }}
                 >
                     <span style={{ fontSize: "13px", fontWeight: 600, color: typeof ats_score === "number" && ats_score >= 80 ? "var(--accent-emerald)" : typeof ats_score === "number" && ats_score >= 60 ? "var(--accent-amber)" : "var(--accent-rose)" }}>
-                        ATS Score: {ats_score ?? "N/A"}/100
+                        {t("ATS Score:")} {ats_score ?? t("N/A")}/100
                     </span>
                 </div>
                 <button
@@ -217,7 +241,7 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                     className="btn btn-ghost"
                     style={{ gap: "6px", fontSize: "13px" }}
                 >
-                    {expanded ? "Collapse" : "Expand"}
+                    {expanded ? t("Collapse") : t("Expand")}
                     <ChevronDown size={14} style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }} />
                 </button>
             </div>
@@ -241,13 +265,13 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                         <Target size={18} color="var(--accent-purple)" />
                                     </div>
                                     <div>
-                                        <h3 className="font-display" style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--fg-primary)" }}>RAG Target Role Alignment</h3>
-                                        <p style={{ fontSize: "12px", color: "var(--fg-muted)" }}>Benchmarked against Gold Standard criteria for the target role</p>
+                                        <h3 className="font-display" style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--fg-primary)" }}>{t("RAG Target Role Alignment")}</h3>
+                                        <p style={{ fontSize: "12px", color: "var(--fg-muted)" }}>{t("Benchmarked against Gold Standard criteria for the target role")}</p>
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                                        <span style={{ fontSize: "11px", color: "var(--fg-muted)" }}>Skills Match Rate</span>
+                                        <span style={{ fontSize: "11px", color: "var(--fg-muted)" }}>{t("Skills Match Rate")}</span>
                                         <span className="font-display" style={{ fontSize: "1.25rem", fontWeight: 700, color: skillMatchPercent >= 70 ? "var(--accent-emerald)" : skillMatchPercent >= 40 ? "var(--accent-amber)" : "var(--accent-rose)" }}>
                                             {skillMatchPercent}%
                                         </span>
@@ -267,14 +291,14 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                 {/* Gold Standard Skills */}
                                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                                     <h4 style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <CheckCircle2 size={14} color="var(--accent-emerald)" /> Gold Standard Skills Map
+                                        <CheckCircle2 size={14} color="var(--accent-emerald)" /> {t("Gold Standard Skills Map")}
                                     </h4>
                                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                                         {rag_benchmarks.gold_standard_skills.map((skill) => {
                                             const matches = candidateSkillsLower.includes(skill.toLowerCase());
                                             return (
                                                 <span key={skill} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 500, color: matches ? "var(--accent-emerald)" : "var(--fg-muted)", background: matches ? "rgba(16,185,129,0.08)" : "var(--bg-surface)", border: `1px solid ${matches ? "rgba(16,185,129,0.25)" : "var(--border-subtle)"}` }}>
-                                                    {matches ? "✓" : "○"} {skill}
+                                                    {matches ? "✓" : "○"} {localizedSkill(skill)}
                                                 </span>
                                             );
                                         })}
@@ -285,14 +309,14 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                         <h4 style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                            💡 Core Concepts Alignment
+                                            {t("💡 Core Concepts Alignment")}
                                         </h4>
                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                                             {rag_benchmarks.core_concepts.map((concept) => {
                                                 const matches = candidateSkillsLower.includes(concept.toLowerCase()) || (technical_skills && technical_skills.some((s: string) => s.toLowerCase().includes(concept.toLowerCase())));
                                                 return (
                                                     <span key={concept} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 500, color: matches ? "var(--brand)" : "var(--fg-muted)", background: matches ? "rgba(99,102,241,0.08)" : "var(--bg-surface)", border: `1px solid ${matches ? "rgba(99,102,241,0.25)" : "var(--border-subtle)"}` }}>
-                                                        {matches ? "✓" : "○"} {concept}
+                                                        {matches ? "✓" : "○"} {localizedSkill(concept)}
                                                     </span>
                                                 );
                                             })}
@@ -300,14 +324,14 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                         <h4 style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                            🛠️ Required Toolchain Match
+                                            {t("🛠️ Required Toolchain Match")}
                                         </h4>
                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                                             {rag_benchmarks.common_toolchain.map((tool) => {
                                                 const matches = candidateSkillsLower.includes(tool.toLowerCase());
                                                 return (
                                                     <span key={tool} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 500, color: matches ? "var(--accent-cyan)" : "var(--fg-muted)", background: matches ? "rgba(6,182,212,0.08)" : "var(--bg-surface)", border: `1px solid ${matches ? "rgba(6,182,212,0.25)" : "var(--border-subtle)"}` }}>
-                                                        {matches ? "✓" : "○"} {tool}
+                                                        {matches ? "✓" : "○"} {localizedSkill(tool)}
                                                     </span>
                                                 );
                                             })}
@@ -319,22 +343,22 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                             {/* Experience Benchmarks */}
                             <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                                 <h4 style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                    <Briefcase size={14} color="var(--accent-cyan)" /> Role Experience Expectations
+                                    <Briefcase size={14} color="var(--accent-cyan)" /> {t("Role Experience Expectations")}
                                 </h4>
                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px" }}>
                                     <div style={{ padding: "14px", borderRadius: "12px", background: years_of_experience < 3 ? "rgba(59,130,246,0.05)" : "var(--bg-surface)", border: `1px solid ${years_of_experience < 3 ? "rgba(59,130,246,0.3)" : "var(--border-subtle)"}`, position: "relative" }}>
                                         {years_of_experience < 3 && (
-                                            <span style={{ position: "absolute", top: "10px", right: "12px", background: "rgba(59,130,246,0.2)", color: "var(--brand)", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "100px", border: "1px solid rgba(59,130,246,0.4)" }}>Your Level Match</span>
+                                            <span style={{ position: "absolute", top: "10px", right: "12px", background: "rgba(59,130,246,0.2)", color: "var(--brand)", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "100px", border: "1px solid rgba(59,130,246,0.4)" }}>{t("Your Level Match")}</span>
                                         )}
-                                        <h5 style={{ fontSize: "12px", fontWeight: 700, color: years_of_experience < 3 ? "var(--brand)" : "var(--fg-muted)", marginBottom: "6px" }}>Junior Level Expectations</h5>
-                                        <p style={{ fontSize: "12px", color: "var(--fg-secondary)", lineHeight: "1.4" }}>{rag_benchmarks.experience_benchmarks.junior}</p>
+                                        <h5 style={{ fontSize: "12px", fontWeight: 700, color: years_of_experience < 3 ? "var(--brand)" : "var(--fg-muted)", marginBottom: "6px" }}>{t("Junior Level Expectations")}</h5>
+                                        <p style={{ fontSize: "12px", color: "var(--fg-secondary)", lineHeight: "1.4" }}>{localizedExperience(rag_benchmarks.experience_benchmarks.junior)}</p>
                                     </div>
                                     <div style={{ padding: "14px", borderRadius: "12px", background: years_of_experience >= 3 ? "rgba(139,92,246,0.05)" : "var(--bg-surface)", border: `1px solid ${years_of_experience >= 3 ? "rgba(139,92,246,0.3)" : "var(--border-subtle)"}`, position: "relative" }}>
                                         {years_of_experience >= 3 && (
-                                            <span style={{ position: "absolute", top: "10px", right: "12px", background: "rgba(139,92,246,0.2)", color: "var(--accent-purple)", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "100px", border: "1px solid rgba(139,92,246,0.4)" }}>Your Level Match</span>
+                                            <span style={{ position: "absolute", top: "10px", right: "12px", background: "rgba(139,92,246,0.2)", color: "var(--accent-purple)", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "100px", border: "1px solid rgba(139,92,246,0.4)" }}>{t("Your Level Match")}</span>
                                         )}
-                                        <h5 style={{ fontSize: "12px", fontWeight: 700, color: years_of_experience >= 3 ? "var(--accent-purple)" : "var(--fg-muted)", marginBottom: "6px" }}>Senior Level Expectations</h5>
-                                        <p style={{ fontSize: "12px", color: "var(--fg-secondary)", lineHeight: "1.4" }}>{rag_benchmarks.experience_benchmarks.senior}</p>
+                                        <h5 style={{ fontSize: "12px", fontWeight: 700, color: years_of_experience >= 3 ? "var(--accent-purple)" : "var(--fg-muted)", marginBottom: "6px" }}>{t("Senior Level Expectations")}</h5>
+                                        <p style={{ fontSize: "12px", color: "var(--fg-secondary)", lineHeight: "1.4" }}>{localizedExperience(rag_benchmarks.experience_benchmarks.senior)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -343,7 +367,7 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
 
                     {/* Experience Summary */}
                     <SectionCard
-                        title={years_of_experience <= 0 ? "🎓 Fresher / No Professional Experience" : years_of_experience < 1 ? `${Math.round(years_of_experience * 12)} Month${Math.round(years_of_experience * 12) !== 1 ? "s" : ""} of Experience` : `${years_of_experience} Year${years_of_experience !== 1 ? "s" : ""} of Experience`}
+                        title={experienceTitle}
                         icon={Clock}
                         iconColor="var(--accent-cyan)"
                         borderColor="rgba(6,182,212,0.2)"
@@ -353,29 +377,29 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                 <p className="gradient-text" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "2.2rem", fontWeight: 800, lineHeight: 1, marginBottom: "4px" }}>
                                     {years_of_experience <= 0 ? "—" : years_of_experience < 1 ? Math.round(years_of_experience * 12) : years_of_experience}
                                 </p>
-                                <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>{years_of_experience <= 0 ? "Fresher" : years_of_experience < 1 ? "Months" : "Years"}</p>
+                                <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>{years_of_experience <= 0 ? t("Fresher") : years_of_experience < 1 ? t("Months") : t("Years")}</p>
                             </div>
                             <div style={{ flex: 1, minWidth: "120px", padding: "16px", borderRadius: "12px", background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)", textAlign: "center" }}>
                                 <p className="font-display" style={{ fontSize: "2.2rem", fontWeight: 800, lineHeight: 1, marginBottom: "4px", color: "var(--accent-purple)" }}>
                                     {technical_skills.length}
                                 </p>
-                                <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>Tech Skills</p>
+                                <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>{t("Tech Skills")}</p>
                             </div>
                             <div style={{ flex: 1, minWidth: "120px", padding: "16px", borderRadius: "12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)", textAlign: "center" }}>
                                 <p className="font-display" style={{ fontSize: "2.2rem", fontWeight: 800, lineHeight: 1, marginBottom: "4px", color: "var(--accent-emerald)" }}>
                                     {soft_skills.length}
                                 </p>
-                                <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>Soft Skills</p>
+                                <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>{t("Soft Skills")}</p>
                             </div>
                         </div>
                         {experience_breakdown && experience_breakdown.length > 0 && (
                             <div style={{ marginTop: "16px", borderTop: "1px solid rgba(6,182,212,0.15)", paddingTop: "16px" }}>
-                                <p style={{ fontSize: "11px", color: "var(--fg-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>Detected Work Experience</p>
+                                <p style={{ fontSize: "11px", color: "var(--fg-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "10px" }}>{t("Detected Work Experience")}</p>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {experience_breakdown.map((exp, idx) => (
                                         <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", color: "var(--fg-secondary)", lineHeight: "1.4" }}>
                                             <span style={{ color: "var(--accent-cyan)", marginTop: "2px" }}>•</span>
-                                            <span>{exp}</span>
+                                            <span>{localizedExperience(exp)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -385,18 +409,18 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
 
                     {/* ATS Score Breakdown */}
                     {ats_score_breakdown && (
-                        <SectionCard title="📊 ATS Score Breakdown" icon={TrendingUp} iconColor="var(--accent-emerald)" borderColor="rgba(16,185,129,0.2)">
+                        <SectionCard title={t("📊 ATS Score Breakdown")} icon={TrendingUp} iconColor="var(--accent-emerald)" borderColor="rgba(16,185,129,0.2)">
                             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                                <SkillProgressBar label={`Keywords & Hard Skills (${bdKeywords}/35)`} percent={Math.round((bdKeywords / 35) * 100)} color="linear-gradient(90deg, var(--accent-emerald), #34d399)" delay={100} />
-                                <SkillProgressBar label={`Quantified Achievements (${bdAchievements}/30)`} percent={Math.round((bdAchievements / 30) * 100)} color="linear-gradient(90deg, var(--accent-amber), #fbbf24)" delay={200} />
-                                <SkillProgressBar label={`Action Verbs (${bdActionVerbs}/20)`} percent={Math.round((bdActionVerbs / 20) * 100)} color="linear-gradient(90deg, var(--brand), #60a5fa)" delay={300} />
-                                <SkillProgressBar label={`Formatting & Length (${bdFormatting}/15)`} percent={Math.round((bdFormatting / 15) * 100)} color="linear-gradient(90deg, var(--accent-purple), #a78bfa)" delay={400} />
+                                <SkillProgressBar label={`${t("Keywords & Hard Skills")} (${bdKeywords}/35)`} percent={Math.round((bdKeywords / 35) * 100)} color="linear-gradient(90deg, var(--accent-emerald), #34d399)" delay={100} />
+                                <SkillProgressBar label={`${t("Quantified Achievements")} (${bdAchievements}/30)`} percent={Math.round((bdAchievements / 30) * 100)} color="linear-gradient(90deg, var(--accent-amber), #fbbf24)" delay={200} />
+                                <SkillProgressBar label={`${t("Action Verbs")} (${bdActionVerbs}/20)`} percent={Math.round((bdActionVerbs / 20) * 100)} color="linear-gradient(90deg, var(--brand), #60a5fa)" delay={300} />
+                                <SkillProgressBar label={`${t("Formatting & Length")} (${bdFormatting}/15)`} percent={Math.round((bdFormatting / 15) * 100)} color="linear-gradient(90deg, var(--accent-purple), #a78bfa)" delay={400} />
                             </div>
                         </SectionCard>
                     )}
 
                     {/* Top Strengths */}
-                    <SectionCard title="🏆 Top Strengths" icon={Trophy} iconColor="var(--accent-amber)" borderColor="rgba(245,158,11,0.2)">
+                    <SectionCard title={t("🏆 Top Strengths")} icon={Trophy} iconColor="var(--accent-amber)" borderColor="rgba(245,158,11,0.2)">
                         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                             {top_strengths.map((s, i) => (
                                 <div
@@ -412,24 +436,24 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                     <span style={{ width: "22px", height: "22px", borderRadius: "50%", background: "rgba(245,158,11,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 700, color: "var(--accent-amber)", flexShrink: 0 }}>
                                         {i + 1}
                                     </span>
-                                    <span style={{ fontSize: "13px", color: "var(--fg-primary)" }}>{s}</span>
+                                    <span style={{ fontSize: "13px", color: "var(--fg-primary)" }}>{localizedSkill(s)}</span>
                                 </div>
                             ))}
                         </div>
                     </SectionCard>
 
                     {/* Technical Skills */}
-                    <SectionCard title="⚡ Your Top Skills" icon={TrendingUp} iconColor="var(--brand)" borderColor="rgba(59,130,246,0.2)">
+                    <SectionCard title={t("⚡ Your Top Skills")} icon={TrendingUp} iconColor="var(--brand)" borderColor="rgba(59,130,246,0.2)">
                         <div>
                             {technical_skills.slice(0, 8).map((skill, i) => (
-                                <SkillProgressBar key={skill} label={skill} percent={skillPercent(i, technical_skills.slice(0, 8).length)} color="linear-gradient(90deg, var(--brand), var(--accent-purple))" delay={i * 80} />
+                                <SkillProgressBar key={skill} label={localizedSkill(skill)} percent={skillPercent(i, technical_skills.slice(0, 8).length)} color="linear-gradient(90deg, var(--brand), var(--accent-purple))" delay={i * 80} />
                             ))}
                             {soft_skills.length > 0 && (
                                 <>
-                                    <p style={{ fontSize: "11px", color: "var(--fg-muted)", marginTop: "16px", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Soft Skills</p>
+                                    <p style={{ fontSize: "11px", color: "var(--fg-muted)", marginTop: "16px", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("Soft Skills")}</p>
                                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                                         {soft_skills.map((s, i) => (
-                                            <SkillBadge key={s} label={s} color="var(--accent-purple)" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.25)" delay={i * 60} />
+                                            <SkillBadge key={s} label={localizedSkill(s)} color="var(--accent-purple)" bg="rgba(139,92,246,0.1)" border="rgba(139,92,246,0.25)" delay={i * 60} />
                                         ))}
                                     </div>
                                 </>
@@ -438,7 +462,7 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                     </SectionCard>
 
                     {/* Skill Gaps */}
-                    <SectionCard title="🔴 Skill Gaps to Address" icon={AlertTriangle} iconColor="var(--accent-rose)" borderColor="rgba(239,68,68,0.25)">
+                    <SectionCard title={t("🔴 Skill Gaps to Address")} icon={AlertTriangle} iconColor="var(--accent-rose)" borderColor="rgba(239,68,68,0.25)">
                         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
                             {skill_gaps.map((gap, i) => (
                                 <div
@@ -454,9 +478,9 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                         <span style={{ fontSize: "14px", alignSelf: "flex-start", marginTop: "2px" }}>{i === 0 ? "🔴" : i === 1 ? "🟠" : "🟡"}</span>
                                         <div style={{ flex: 1 }}>
-                                            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg-primary)", marginBottom: "4px", lineHeight: "1.4" }}>{gap}</p>
+                                            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--fg-primary)", marginBottom: "4px", lineHeight: "1.4" }}>{localizedSkill(gap)}</p>
                                             <p style={{ fontSize: "11px", color: "var(--fg-muted)" }}>
-                                                {i === 0 ? "High priority (Critical for top companies)" : i === 1 ? "Medium priority (Rapidly growing demand)" : "Competitive advantage (Good to have)"}
+                                                {t(i === 0 ? "High priority (Critical for top companies)" : i === 1 ? "Medium priority (Rapidly growing demand)" : "Competitive advantage (Good to have)")}
                                             </p>
                                         </div>
                                     </div>
@@ -465,15 +489,15 @@ export default function ResumeAnalysisPanel({ analysis, filename }: Props) {
                         </div>
                         <div style={{ padding: "12px 16px", borderRadius: "10px", background: "linear-gradient(135deg, rgba(59,130,246,0.06), rgba(139,92,246,0.08))", border: "1px solid rgba(139,92,246,0.15)", fontSize: "12px", color: "var(--fg-muted)", display: "flex", alignItems: "center", gap: "8px" }}>
                             <Sparkles size={13} color="var(--brand)" />
-                            Set your target role below to get a personalized roadmap to close these gaps!
+                            {t("Set your target role below to get a personalized roadmap to close these gaps!")}
                         </div>
                     </SectionCard>
 
                     {/* All Technical Skills */}
-                    <SectionCard title="🧠 All Technical Skills Detected" icon={User} iconColor="var(--accent-cyan)" borderColor="rgba(6,182,212,0.2)">
+                    <SectionCard title={t("🧠 All Technical Skills Detected")} icon={User} iconColor="var(--accent-cyan)" borderColor="rgba(6,182,212,0.2)">
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                             {technical_skills.map((s, i) => (
-                                <SkillBadge key={s} label={s} color="var(--accent-cyan)" bg="rgba(6,182,212,0.08)" border="rgba(6,182,212,0.2)" delay={i * 40} />
+                                <SkillBadge key={s} label={localizedSkill(s)} color="var(--accent-cyan)" bg="rgba(6,182,212,0.08)" border="rgba(6,182,212,0.2)" delay={i * 40} />
                             ))}
                         </div>
                     </SectionCard>
