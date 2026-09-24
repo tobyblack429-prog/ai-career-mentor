@@ -102,6 +102,7 @@ export const zhTranslations: Record<string, string> = {
   "Daily Feature Quotas": "每日功能额度",
   "Free Tier": "免费版",
   "Recent Activity": "近期活动",
+  "Market Research & Trends": "市场调研与趋势",
   "No operations logged yet.": "暂时没有操作记录。",
   "Full Career Analysis History": "综合职业分析历史",
   "Your Career Progress": "你的职业成长进度",
@@ -545,6 +546,11 @@ export const zhTranslations: Record<string, string> = {
   "Market Node Complete": "市场分析完成",
   "LinkedIn Node Complete": "领英优化完成",
   "ORCHESTRATION EVENT STREAM": "多智能体实时任务流",
+  "Started Resume Analysis": "开始分析简历",
+  "Fetching Market Trends": "正在获取市场趋势",
+  "Generating LinkedIn Strategy": "正在生成领英策略",
+  "Building Modular Roadmap": "正在构建模块化学习路线",
+  "!! REPAIR: using deterministic fallback": "!! 修复：改用确定性备用方案",
   "Initializing AI Agents...": "正在启动 AI 智能体…",
   "Back to Wizard": "返回配置",
 
@@ -740,6 +746,11 @@ export const zhTranslations: Record<string, string> = {
 };
 
 const patternTranslations: Array<[RegExp, (...matches: string[]) => string]> = [
+  [/^Optimized LinkedIn for\s+(.+?)(?:\s+\(Cached\))?$/i, (role) => `已优化 ${zhTranslations[role] ?? "其他职位"} 的领英资料`],
+  [/^Generated Roadmap for\s+(.+?)(?:\s+\(Cached\))?$/i, (role) => `已生成 ${zhTranslations[role] ?? "其他职位"} 的学习路线`],
+  [/^Researched Market for\s+(.+)$/i, (role) => `已调研 ${zhTranslations[role] ?? "其他职位"} 的就业市场`],
+  [/^Analyzed Resume(?:\s+\(Cached\))?$/i, () => "已完成简历分析"],
+  [/^Started Mock Interview for\s+(.+)$/i, (role) => `已开始${zhTranslations[role] ?? "其他职位"}模拟面试`],
   [/^Today:\s*(.+)$/i, (value) => `今日：${value}`],
   [/^Week\s+(\d+)$/i, (week) => `第 ${week} 周`],
   [/^Day\s+(\d+)$/i, (day) => `第 ${day} 天`],

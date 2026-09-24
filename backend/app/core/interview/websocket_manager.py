@@ -8,6 +8,7 @@ from starlette.websockets import WebSocketState
 from sqlalchemy.orm import Session
 
 from app.core.rate_limit import check_daily_limit, increment_usage
+from app.core.config import settings
 from app.core.activity import log_activity
 from app.core.interview.session import (
     _get_user_from_token,
@@ -19,6 +20,7 @@ from app.core.interview.session import (
 from app.core.interview.state import (
     InterviewStateMachine,
     PHASE_LABELS,
+    PHASE_LABELS_ZH,
     build_evaluation_guidance,
     build_hint_instruction,
     build_followup_instruction,
@@ -62,6 +64,11 @@ FEEDBACK_CONCLUDING_TEMPLATE = (
     "Thank you for your time today. I've heard everything I need — I'll now put "
     "together your performance report. Have a great day!"
 )
+
+
+def _has_interview_provider_key() -> bool:
+    """Avoid opening a billed interview session when no model can answer."""
+    return any((settings.GROQ_API_KEY, settings.GOOGLE_API_KEY, settings.NVIDIA_API_KEY))
 
 
 # ── Safe WebSocket Send & Close Helpers ─────────────────────────────────────
@@ -357,7 +364,7 @@ async def _generate_feedback_report(websocket: WebSocket, session_id: str, sessi
     )
 
     await _safe_send_json(websocket, {"role": "interviewer", "type": "feedback", "content": feedback_content})
-    await _safe_send_json(websocket, {"role": "system", "content": "Interview Completed.", "score": final_score})
+    await _safe_send_json(websocket, {"role": "system", "type": "completed", "content": "面试已完成。" if language == "zh" else "Interview Completed.", "score": final_score})
     return final_score
 
 
@@ -399,7 +406,16 @@ async def handle_websocket_connection(
         return
 
     await websocket.accept()
-    await _safe_send_json(websocket, {"role": "system", "content": "Connected. Preparing your interview..."})
+    if not _has_interview_provider_key():
+        message = (
+            "AI 面试官尚未配置模型密钥。请在后端 .env 中配置 GROQ_API_KEY、GOOGLE_API_KEY 或 NVIDIA_API_KEY 后重试。"
+            if language == "zh" else
+            "The AI interviewer needs a model key. Set GROQ_API_KEY, GOOGLE_API_KEY, or NVIDIA_API_KEY in backend/.env and try again."
+        )
+        await _safe_send_json(websocket, {"role": "system", "type": "error", "content": message})
+        await _safe_close(websocket, code=1013)
+        return
+    await _safe_send_json(websocket, {"role": "system", "content": "连接成功，正在准备面试…" if language == "zh" else "Connected. Preparing your interview..."})
 
     # Load initial data on-demand in a short-lived DB transaction
     res = await asyncio.to_thread(load_initial_interview_data, session_id, current_user_id, current_user_name, role, type)
@@ -407,7 +423,7 @@ async def handle_websocket_connection(
         await _safe_send_json(websocket, {
             "role": "system",
             "type": "rate_limit",
-            "content": res.get("message", "Your daily interview limit has been reached."),
+            "content": "面试次数已达上限，请稍后再试。" if language == "zh" else res.get("message", "Your daily interview limit has been reached."),
         })
         await _safe_close(websocket, code=1013)
         return
@@ -415,7 +431,7 @@ async def handle_websocket_connection(
         await _safe_send_json(websocket, {
             "role": "system",
             "type": "error",
-            "content": res.get("message", "Unauthorized session access."),
+            "content": "无法访问此面试记录。" if language == "zh" else res.get("message", "Unauthorized session access."),
         })
         await _safe_close(websocket, code=1008)
         return
@@ -511,7 +527,12 @@ async def handle_websocket_connection(
     role_category = get_role_category(role)
     if not session_data["history"]:
         state_machine = InterviewStateMachine(1)  # Initial Phase 1: Intro
-        first_msg = [{"role": "user", "content": f"I am a candidate for the {role} position at {company}. Start the interview. Ask me the first question."}]
+        opening_request = (
+            f"我正在应聘 {company} 的{role}岗位。请用简体中文开始面试，并提出第一个问题。"
+            if language == "zh" else
+            f"I am a candidate for the {role} position at {company}. Start the interview. Ask me the first question."
+        )
+        first_msg = [{"role": "user", "content": opening_request}]
 
         # Inject active state instruction into system prompt
         injected_system_prompt = f"{system_prompt}\n\n{state_machine.get_prompt_instruction('', interview_type=type, role_category=role_category)}"
@@ -519,12 +540,12 @@ async def handle_websocket_connection(
             msg_content = await _stream_llm_response(first_msg, websocket, injected_system_prompt, provider=provider, tts_queue=persistent_tts_queue)
         except Exception as e:
             logger.error(f"Failed to generate first interview question: {e}")
-            await _safe_send_json(websocket, {"role": "system", "content": "Sorry, I encountered an issue starting the interview. Please try again."})
+            await _safe_send_json(websocket, {"role": "system", "type": "error", "content": "面试官启动失败，请检查模型服务后重试。" if language == "zh" else "The interviewer could not start. Check the model service and try again."})
             await _safe_close(websocket, code=1011)
             return
 
         if not msg_content:
-            await _safe_send_json(websocket, {"role": "system", "content": "Sorry, I couldn't generate a question. Please try again."})
+            await _safe_send_json(websocket, {"role": "system", "type": "error", "content": "面试官未能生成问题，请检查模型服务后重试。" if language == "zh" else "The interviewer could not generate a question. Check the model service and try again."})
             await _safe_close(websocket, code=1011)
             return
 
@@ -533,9 +554,9 @@ async def handle_websocket_connection(
         if not ok:
             session_data["metrics"]["invalid_response"] += 1
             logger.warning(f"[interview] First question invalid ({reasons}) — using intro fallback.")
-            msg_content = build_fallback_question(1)
+            msg_content = build_fallback_question(1, language)
 
-        phase_1_name = PHASE_LABELS.get(1, "Introduction & Background")
+        phase_1_name = (PHASE_LABELS_ZH if language == "zh" else PHASE_LABELS)[1]
         session_data["history"].append({
             "role": "interviewer",
             "type": "question",
@@ -676,18 +697,18 @@ async def handle_websocket_connection(
 
             # Send system concluding event to block input while wrapping up
             if asked_phase >= 11 or next_mode == "conclude":
-                await _safe_send_json(websocket, {"role": "system", "content": "Interview Concluding..."})
+                await _safe_send_json(websocket, {"role": "system", "type": "concluding", "content": "面试即将结束…" if language == "zh" else "Interview Concluding..."})
 
             # ── 4. Stream the interviewer turn ──────────────────────────────
             try:
                 msg_content = await _stream_llm_response(transcript_prompt, websocket, active_system_prompt, provider=provider, tts_queue=persistent_tts_queue)
             except Exception as e:
                 logger.error(f"Failed to generate interview question: {e}")
-                await _safe_send_json(websocket, {"role": "system", "content": "Sorry, I encountered an issue. Please try again."})
+                await _safe_send_json(websocket, {"role": "system", "type": "error", "content": "面试中断，请检查模型服务后重新开始。" if language == "zh" else "The interview stopped. Check the model service and start again."})
                 break
 
             if not msg_content:
-                await _safe_send_json(websocket, {"role": "system", "content": "Sorry, I couldn't generate a response. Please try again."})
+                await _safe_send_json(websocket, {"role": "system", "type": "error", "content": "面试官未能生成回复，请检查模型服务后重新开始。" if language == "zh" else "The interviewer could not generate a response. Check the model service and start again."})
                 break
 
             # ── 5. Guardrails: validate, regenerate once, then fallback ─────
@@ -696,19 +717,19 @@ async def handle_websocket_connection(
                 if not ok:
                     session_data["metrics"]["invalid_response"] += 1
                     logger.warning(f"[interview] Concluding turn invalid ({reasons}) — using template.")
-                    msg_content = FEEDBACK_CONCLUDING_TEMPLATE
+                    msg_content = "感谢参加面试。我会整理你的表现并生成评估报告。" if language == "zh" else FEEDBACK_CONCLUDING_TEMPLATE
             elif asked_phase == 1:
                 ok, reasons = validate_clean_spoken_turn(msg_content)
                 if not ok:
                     session_data["metrics"]["invalid_response"] += 1
                     logger.warning(f"[interview] Phase-1 question invalid ({reasons}) — using fallback.")
-                    msg_content = build_fallback_question(1)
+                    msg_content = build_fallback_question(1, language)
             elif asked_phase == 10:
                 ok, reasons = validate_interviewer_text(msg_content)
                 if not ok:
                     session_data["metrics"]["invalid_response"] += 1
                     logger.warning(f"[interview] Phase-10 closing question invalid ({reasons}) — using fallback.")
-                    msg_content = build_fallback_question(10)
+                    msg_content = build_fallback_question(10, language)
             else:
                 ok, reasons = validate_question_turn(msg_content)
                 if not ok:
@@ -729,10 +750,10 @@ async def handle_websocket_connection(
                     else:
                         session_data["metrics"]["fallback_question"] += 1
                         logger.warning(f"[interview] Regeneration failed — using fallback question for phase {asked_phase}.")
-                        msg_content = build_fallback_question(asked_phase)
+                        msg_content = build_fallback_question(asked_phase, language)
 
             # ── 6. Persist turn, then send to the client ────────────────────
-            phase_display_name = PHASE_LABELS.get(asked_phase, "")
+            phase_display_name = (PHASE_LABELS_ZH if language == "zh" else PHASE_LABELS).get(asked_phase, "")
             is_concluding_turn = (next_mode == "conclude" or asked_phase >= 11)
             frame_type = "concluding" if is_concluding_turn else "question"
 

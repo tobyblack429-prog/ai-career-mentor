@@ -1,0 +1,42 @@
+name: 每周核验中国就业市场数据
+
+on:
+  schedule:
+    # UTC 周一 01:00，即北京时间周一 09:00；GitHub 定时任务可能延迟。
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  request-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 汇总到同一个待办事项
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '每周核验：中国就业市场数据与来源';
+            const { owner, repo } = context.repo;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', per_page: 100,
+            });
+            const existing = issues.find(issue => !issue.pull_request && issue.title === title);
+            const date = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai' }).format(new Date());
+            const body = [
+              `北京时间 ${date}：请核验并按需要更新中国就业市场快照。`,
+              '',
+              '- 检查国家统计局最新就业指标：https://www.stats.gov.cn/sj/zxfb/',
+              '- 检查人社部招聘活动与行业需求：https://chinajob.mohrss.gov.cn/',
+              '- 检查国聘招聘会：https://zp.iguopin.com/ 和 BOSS 直聘公开职位页；职位样本须记录查看日期。',
+              '- 对照 `frontend/src/data/chinaMarket.ts` 更新数值、口径、发布日期、来源链接和核验日期；不要把活动需求写成当前职位总数，也不要推算未披露的城市薪资。',
+              '- 核对 `frontend/src/components/market/ChinaMarketSnapshot.tsx` 的展示，运行前端类型检查和构建，审核后再合并。',
+              '',
+              '此待办仅提醒核验，**不会自动改写或伪造数据**。没有可靠新数据时记录“本周无可核验更新”。',
+            ].join('\n');
+            if (existing) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body });
+            }

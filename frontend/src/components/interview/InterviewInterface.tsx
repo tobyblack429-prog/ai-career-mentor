@@ -88,6 +88,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
     const [isInputFocused, setIsInputFocused] = useState(false);
     const [isInputBlocked, setIsInputBlocked] = useState(false);
     const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -265,6 +266,16 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                     streamBufferRef.current = "";
                 }
             } else if (data.role === "system") {
+                if (data.type === "error") {
+                    isClosedByUserRef.current = true;
+                    setConnectionError(data.content || (locale === "zh" ? "面试服务暂时不可用。" : "The interview service is unavailable."));
+                    setStatus("Connection Lost");
+                    setIsThinking(false);
+                    setStreamingMessage("");
+                    streamBufferRef.current = "";
+                    wsRef.current?.close();
+                    return;
+                }
                 if (data.type === "rate_limit") {
                     // Blocked by daily/gap rate limit — stop reconnecting and surface the message
                     isClosedByUserRef.current = true;
@@ -278,9 +289,9 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                     }
                     return;
                 }
-                if (data.content === "Interview Concluding...") {
+                if (data.type === "concluding" || data.content === "Interview Concluding...") {
                     setIsInputBlocked(true);
-                } else if (data.content === "Interview Completed.") {
+                } else if (data.type === "completed" || data.content === "Interview Completed.") {
                     isFinishedRef.current = true;
                     setIsFinished(true);
                     setIsInputBlocked(true);
@@ -324,6 +335,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                 }, delay);
             } else {
                 setStatus("Connection Lost");
+                setConnectionError(locale === "zh" ? "面试连接已中断，请返回后重新开始。" : "The interview connection was lost. Go back and start again.");
             }
         };
 
@@ -419,6 +431,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
     }, []);
 
     const handleSend = useCallback(() => {
+        if (wsRef.current?.readyState !== 1) return;
         const cleanCode = codeVal.trim();
         const hasCode = cleanCode &&
             cleanCode !== "// Write your code here..." &&
@@ -445,8 +458,8 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
         setIsThinking(true);
     }, [inputVal, codeVal, language, stopAudio]);
 
-    const isDisabled = isThinking || isSpeaking || isInputBlocked;
-    const isSessionOver = isFinished || isInputBlocked;
+    const isDisabled = isThinking || isSpeaking || isInputBlocked || !!connectionError || !!rateLimitMessage || wsRef.current?.readyState !== 1;
+    const isSessionOver = isFinished || isInputBlocked || !!connectionError || !!rateLimitMessage;
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey && !isDisabled) {
@@ -459,8 +472,8 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
         <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px", minHeight: "calc(100vh - 100px)", padding: "0 0 48px 0", position: "relative", zIndex: 1 }}>
             <style dangerouslySetInnerHTML={{ __html: CSS_KEYFRAMES }} />
 
-            {/* Rate Limit Reached Overlay */}
-            {rateLimitMessage && (
+            {/* Interview unavailable / limit overlay */}
+            {(rateLimitMessage || connectionError) && (
                 <div style={{
                     position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
                     background: "rgba(0, 0, 0, 0.72)", backdropFilter: "blur(12px)",
@@ -475,10 +488,10 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                             <Clock size={28} style={{ color: "var(--accent-amber)" }} />
                         </div>
                         <h3 className="font-display" style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--fg-primary)", marginBottom: "10px" }}>
-                            Daily Limit Reached
+                            {connectionError ? (locale === "zh" ? "面试服务暂时不可用" : "Interview Unavailable") : (locale === "zh" ? "面试次数已达上限" : "Daily Limit Reached")}
                         </h3>
                         <p style={{ color: "var(--fg-secondary)", lineHeight: 1.65, fontSize: "0.875rem", marginBottom: "24px" }}>
-                            {rateLimitMessage}
+                            {connectionError || rateLimitMessage}
                         </p>
                         <div className="flex" style={{ gap: "10px" }}>
                             {onBack && (
@@ -487,16 +500,9 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                     className="btn btn-primary"
                                     style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", fontWeight: 600 }}
                                 >
-                                    Back to Wizard
+                                    {locale === "zh" ? "返回面试设置" : "Back to Wizard"}
                                 </button>
                             )}
-                            <button
-                                onClick={() => { onEnd(0, ""); }}
-                                className="btn btn-secondary"
-                                style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", fontWeight: 600 }}
-                            >
-                                View Dashboard
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -513,7 +519,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                         <Bot size={22} color="white" />
                     </div>
                     <div>
-                        <h2 className="font-display" style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--fg-primary)", margin: 0, marginBottom: "2px" }}>AI Interviewer</h2>
+                        <h2 className="font-display" style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--fg-primary)", margin: 0, marginBottom: "2px" }}>{t("AI Interviewer")}</h2>
                         <div className="flex items-center" style={{ gap: "10px" }}>
                             <div className="flex items-center" style={{ gap: "5px" }}>
                                 <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent-emerald)", boxShadow: "0 0 8px var(--accent-emerald)" }} />
@@ -688,7 +694,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                                 onKeyDown={handleKeyDown}
                                 onWheel={(e) => e.stopPropagation()}
                                 onTouchMove={(e) => e.stopPropagation()}
-                                placeholder={isSessionOver ? "Interview concluding..." : questionCount >= totalQuestions ? "Ask the interviewer any questions about the company or team..." : "Type your answer here..."}
+                                placeholder={t(isSessionOver ? "Interview concluding..." : questionCount >= totalQuestions ? "Ask the interviewer any questions about the company or team..." : "Type your answer here...")}
                                 data-lenis-prevent
                                 className="custom-scrollbar"
                                 style={{

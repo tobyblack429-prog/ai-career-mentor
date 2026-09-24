@@ -8,6 +8,7 @@ import {
   Lock, HelpCircle,
 } from "lucide-react";
 import { getUserStats } from "@/services/api";
+import { useLanguage } from "@/components/LanguageProvider";
 import { formatDisplayName } from "@/utils/formatName";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -35,6 +36,7 @@ function formatCountdown(seconds: number): string {
 }
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const [userName, setUserName] = useState("Local User");
   const [usageData, setUsageData] = useState<Record<string, number>>({});
   const [gapBlocks, setGapBlocks] = useState<Record<string, number>>({});
@@ -432,7 +434,7 @@ export default function DashboardPage() {
               <div key={i} className="flex items-center gap-3">
                 <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: a.color || "var(--brand)", flexShrink: 0 }} />
                 <div className="flex-1 min-w-0">
-                  <div className="truncate" style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--fg-primary)" }}>{a.label}</div>
+                  <div className="truncate" style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--fg-primary)" }}>{t(a.label)}</div>
                   <div style={{ fontSize: "0.625rem", color: "var(--fg-muted)" }}>{new Date(a.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                 </div>
               </div>

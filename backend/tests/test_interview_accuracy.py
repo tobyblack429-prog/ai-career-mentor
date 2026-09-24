@@ -222,6 +222,43 @@ def test_fallback_questions():
         assert q == FALLBACK_QUESTIONS[phase]
 
 
+def test_chinese_fallback_questions_are_valid():
+    from app.core.interview.state import PHASE_LABELS_ZH
+
+    for phase in range(1, 11):
+        question = build_fallback_question(phase, "zh")
+        assert "？" in question
+        assert validate_question_turn(question)[0]
+        assert PHASE_LABELS_ZH[phase]
+    assert count_questions("你熟悉 Python 吗？为什么？") == 2
+
+
+def test_missing_interview_provider_keys(monkeypatch):
+    from app.core.interview.websocket_manager import _has_interview_provider_key
+    from app.core.config import settings
+
+    for key in ("GROQ_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY"):
+        monkeypatch.setattr(settings, key, "")
+    assert not _has_interview_provider_key()
+    monkeypatch.setattr(settings, "GOOGLE_API_KEY", "test-key")
+    assert _has_interview_provider_key()
+
+
+def test_websocket_reports_missing_model_key(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "AUTH_DISABLED", True)
+    for key in ("GROQ_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY"):
+        monkeypatch.setattr(settings, key, "")
+    with TestClient(app) as client:
+        with client.websocket_connect("/interview/ws/test-no-key?language=zh") as websocket:
+            frame = websocket.receive_json()
+            assert frame["type"] == "error"
+            assert "模型密钥" in frame["content"]
+
+
 # ── 3. Memory & Profile Update Tests ─────────────────────────────────────────
 
 def test_merge_areas():

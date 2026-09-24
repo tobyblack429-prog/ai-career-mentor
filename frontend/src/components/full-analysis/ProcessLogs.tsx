@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { CheckCircle2, Loader2, Briefcase, TrendingUp, Zap } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Props {
     logs: string[];
@@ -7,15 +8,21 @@ interface Props {
     status: "idle" | "loading" | "done" | "error";
 }
 
+function translateLog(log: string, t: (value: string) => string) {
+    const timestamp = log.match(/^(\[[^\]]+\]\s*)(.*)$/);
+    return timestamp ? `${timestamp[1]}${t(timestamp[2])}` : t(log);
+}
+
 export default function ProcessLogs({ logs, status }: Props) {
+    const { t } = useLanguage();
     const consoleRef = useRef<HTMLDivElement>(null);
 
     // Determine which stages are complete based on log patterns
     const stages = [
-        { id: "resume", label: "Resume Context Analysis", icon: Briefcase, pattern: "Resume Node Complete" },
-        { id: "market", label: "Market Research & Trends", icon: TrendingUp, pattern: "Market Node Complete" },
-        { id: "linkedin", label: "LinkedIn Strategy Forge", icon: Briefcase, pattern: "LinkedIn Node Complete" },
-        { id: "roadmap", label: "Curriculum Synthesis", icon: Zap, pattern: "Analysis Complete" },
+        { id: "resume", label: t("Resume Context Analysis"), icon: Briefcase, pattern: "Resume Node Complete" },
+        { id: "market", label: t("Market Research & Trends"), icon: TrendingUp, pattern: "Market Node Complete" },
+        { id: "linkedin", label: t("LinkedIn Strategy Forge"), icon: Briefcase, pattern: "LinkedIn Node Complete" },
+        { id: "roadmap", label: t("Curriculum Synthesis"), icon: Zap, pattern: "Analysis Complete" },
     ];
 
     const getStageStatus = (index: number) => {
@@ -120,7 +127,7 @@ export default function ProcessLogs({ logs, status }: Props) {
                                     color: isError ? "#f87171" : isComplete ? "#34d399" : "rgba(255,255,255,0.7)"
                                 }}>
                                     <span style={{ color: "#a855f7", userSelect: "none" }}>&gt;</span>
-                                    <span>{log}</span>
+                                    <span>{translateLog(log, t)}</span>
                                 </div>
                             );
                         })}

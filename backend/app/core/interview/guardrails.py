@@ -23,11 +23,24 @@ FALLBACK_QUESTIONS: dict[int, str] = {
     10: "That covers all my questions for today. Before we wrap up — do you have any questions for me?",
     11: "Thank you for your time today. I will now evaluate your performance and prepare your final evaluation report.",
 }
+FALLBACK_QUESTIONS_ZH: dict[int, str] = {
+    1: "欢迎参加面试。请先介绍一下你的背景和相关经历？",
+    2: "请说明这个岗位最重要的基础知识，以及你如何在实际工作中运用？",
+    3: "针对刚才的主题，你会重点考虑哪些边界情况、并发问题和设计取舍？",
+    4: "请结合一个具体技术问题，逐步说明你的解题思路和代码实现？",
+    5: "你会怎样分析刚才方案的时间和空间复杂度，并在高并发场景下优化？",
+    6: "请介绍一个你参与的项目：它的技术架构是什么，你解决了什么关键难题？",
+    7: "如果要设计这个模块，你会如何组织接口、数据库结构和核心类？",
+    8: "如果系统需要支持大量并发用户，你会如何处理故障切换和数据一致性？",
+    9: "结合目标公司的业务场景和技术约束，你会如何设计解决方案？",
+    10: "我的问题问完了。你还有什么想了解这个岗位或团队的吗？",
+    11: "感谢参加面试。我会整理你的表现并生成评估报告。",
+}
 
 # Markdown / list / role-play signals that must never reach the candidate
 _MARKDOWN_PATTERN = re.compile(r"(\*\*|##|```|`|^\s*[-•*]\s|\d+\.\s)", re.MULTILINE)
 _EMOJI_PATTERN = re.compile(
-    "[\U0001F000-\U0001FAFF☀-➿️☺-〿⬀-⯿←-⇿]"
+    "[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF]"
 )
 _ROLEPLAY_PATTERN = re.compile(
     r"\b(as (the|the candidate|you are)|i'll (play|be) .?(the candidate|candidate)|let's switch|pretend to be (you|me))\b",
@@ -47,7 +60,7 @@ def strip_markdown(text: str) -> str:
 
 def count_questions(text: str) -> int:
     """Number of question marks — our proxy for single-question enforcement."""
-    return text.count("?")
+    return text.count("?") + text.count("？")
 
 
 def contains_markdown(text: str) -> bool:
@@ -150,6 +163,7 @@ def validate_clean_spoken_turn(text: str, max_words: int = 220) -> tuple[bool, l
     return len(reasons) == 0, reasons
 
 
-def build_fallback_question(phase: int) -> str:
+def build_fallback_question(phase: int, language: str = "en") -> str:
     """Guaranteed-safe question for a phase when regeneration fails."""
-    return FALLBACK_QUESTIONS.get(phase, FALLBACK_QUESTIONS[2])
+    questions = FALLBACK_QUESTIONS_ZH if language == "zh" else FALLBACK_QUESTIONS
+    return questions.get(phase, questions[2])

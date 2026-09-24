@@ -17,6 +17,20 @@ PHASE_LABELS = {
     11: "Feedback & Evaluation",
 }
 
+PHASE_LABELS_ZH = {
+    1: "自我介绍与背景",
+    2: "岗位基础知识",
+    3: "基础知识深入与边界情况",
+    4: "动手编程挑战",
+    5: "复杂度与规模优化",
+    6: "简历项目深入讨论",
+    7: "详细设计",
+    8: "系统架构与扩展",
+    9: "公司业务场景问题",
+    10: "结束问答",
+    11: "反馈与评估",
+}
+
 
 def build_evaluation_guidance(weak_areas: list[str], strong_areas: list[str], verdict: str) -> str:
     """Qualitative guidance block injected for the interviewer's internal use.

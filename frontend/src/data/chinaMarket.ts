@@ -26,6 +26,33 @@ export const CHINA_CITY_LABELS: Record<string, string> = {
 
 export const CHINA_MARKET_SOURCES = [
   {
+    id: "national-employment-2026-08",
+    titleZh: "国家统计局：2026年8月份国民经济运行情况",
+    titleEn: "National Bureau of Statistics: August 2026 economic indicators",
+    publisherZh: "国家统计局",
+    publisherEn: "National Bureau of Statistics",
+    published: "2026-09-15",
+    url: "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965307.html",
+  },
+  {
+    id: "national-ai-fair-2026-09",
+    titleZh: "人社部：2026年9月人工智能等行业线上招聘专场",
+    titleEn: "Ministry of Human Resources: September 2026 AI job fair",
+    publisherZh: "中国就业网（人社部）",
+    publisherEn: "China Employment Network (MOHRSS)",
+    published: "2026-09-15",
+    url: "https://chinajob.mohrss.gov.cn/c/2026-09-15/603949.shtml",
+  },
+  {
+    id: "national-ai-fair-2026-08",
+    titleZh: "人社部：2026年8月人工智能等行业线上招聘专场",
+    titleEn: "Ministry of Human Resources: August 2026 AI job fair",
+    publisherZh: "中国就业网（人社部）",
+    publisherEn: "China Employment Network (MOHRSS)",
+    published: "2026-08-21",
+    url: "https://chinajob.mohrss.gov.cn/c/2026-08-21/592714.shtml",
+  },
+  {
     id: "national-employment-2025",
     titleZh: "国家统计局：中华人民共和国2025年国民经济和社会发展统计公报",
     titleEn: "National Bureau of Statistics: 2025 Statistical Communique",
@@ -71,6 +98,15 @@ export const CHINA_MARKET_SOURCES = [
     url: "https://www.sz.gov.cn/cn/xxgk/zfxxgj/zwdt/content/post_12884592.html",
   },
   {
+    id: "hangzhou-new-quality-salary-2025",
+    titleZh: "杭州市人大常委会：青年人才引育留用调研报告",
+    titleEn: "Hangzhou People's Congress: Youth talent research report",
+    publisherZh: "杭州市人大常委会",
+    publisherEn: "Hangzhou People's Congress",
+    published: "2026-08-26",
+    url: "https://z.hangzhou.com.cn/2026/rddssjchy/content/content_9290059.html",
+  },
+  {
     id: "boss-beijing-software-jobs",
     titleZh: "北京初级软件开发工程师公开职位样本页",
     titleEn: "Public Beijing junior software developer listings",
@@ -101,13 +137,46 @@ export const CHINA_JOB_PORTALS = [
   { labelZh: "直聘招聘平台 · 北京招聘", labelEn: "BOSS Zhipin · Beijing jobs", url: "https://www.zhipin.com/beijing/" },
   { labelZh: "国聘网 · 2026 招聘会", labelEn: "Guopin · 2026 job fairs", url: "https://zph.iguopin.com/" },
   { labelZh: "国聘网 · 智能制造与数字科技专场", labelEn: "Guopin · Smart manufacturing and digital technology", url: "https://sjzn2026.iguopin.com/" },
+  { labelZh: "中国公共招聘网 · 招聘岗位", labelEn: "China Public Recruitment Network · Jobs", url: "https://job.mohrss.gov.cn/cjobs/jobinfolist/listJobinfolist" },
+  { labelZh: "中国国家人才网", labelEn: "China National Talent Network", url: "https://www.newjobs.com.cn/" },
+  { labelZh: "就业在线", labelEn: "Job Online", url: "https://www.jobonline.cn/" },
+] as const;
+
+export const CHINA_RECENT_MARKET_SIGNALS = [
+  {
+    id: "national-employment-2026-08",
+    valueZh: "5.3%",
+    valueEn: "5.3%",
+    labelZh: "2026年8月全国城镇调查失业率",
+    labelEn: "National surveyed urban unemployment, August 2026",
+    noteZh: "全国劳动力指标，不代表科技岗位失业率。",
+    noteEn: "National workforce metric, not a tech-role unemployment rate.",
+  },
+  {
+    id: "national-ai-fair-2026-09",
+    valueZh: "1.3万余人次",
+    valueEn: "13,000+ hiring needs",
+    labelZh: "2026年9月人工智能专场招聘需求",
+    labelEn: "AI hiring needs in September 2026 event",
+    noteZh: "1700余家用人单位；活动为9月14—20日，非当前在招总量。",
+    noteEn: "1,700+ employers; event ran September 14–20, not a live vacancy count.",
+  },
+  {
+    id: "national-ai-fair-2026-08",
+    valueZh: "1.1万余人次",
+    valueEn: "11,000+ hiring needs",
+    labelZh: "2026年8月人工智能专场招聘需求",
+    labelEn: "AI hiring needs in August 2026 event",
+    noteZh: "400家用人单位；活动为8月17—23日，不与9月数据累计。",
+    noteEn: "400 employers; event ran August 17–23, not cumulative with September.",
+  },
 ] as const;
 
 export const CHINA_CITY_MARKET_SNAPSHOT = [
   { city: "北京", attractionRank: 1, itDemandShare: "8.7%", newQualityMonthlySalary: 17095 },
   { city: "上海", attractionRank: 2, itDemandShare: "4.6%", newQualityMonthlySalary: 16910 },
   { city: "深圳", attractionRank: 3, itDemandShare: "7.6%", newQualityMonthlySalary: 15975 },
-  { city: "杭州", attractionRank: 4, itDemandShare: "5.7%", newQualityMonthlySalary: null },
+  { city: "杭州", attractionRank: 4, itDemandShare: "5.7%", newQualityMonthlySalary: 14596 },
   { city: "广州", attractionRank: 5, itDemandShare: null, newQualityMonthlySalary: null },
   { city: "苏州", attractionRank: 6, itDemandShare: null, newQualityMonthlySalary: null },
   { city: "成都", attractionRank: 7, itDemandShare: "4.4%", newQualityMonthlySalary: null },
@@ -116,4 +185,4 @@ export const CHINA_CITY_MARKET_SNAPSHOT = [
   { city: "无锡", attractionRank: 10, itDemandShare: null, newQualityMonthlySalary: null },
 ] as const;
 
-export const CHINA_MARKET_SNAPSHOT_DATE = "2026-09-23";
+export const CHINA_MARKET_SNAPSHOT_DATE = "2026-09-24";

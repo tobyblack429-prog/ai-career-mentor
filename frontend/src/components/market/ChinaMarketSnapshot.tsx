@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Activity, Building2, ExternalLink, MapPin } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import {
@@ -8,11 +9,18 @@ import {
   CHINA_JOB_PORTALS,
   CHINA_MARKET_SNAPSHOT_DATE,
   CHINA_MARKET_SOURCES,
+  CHINA_RECENT_MARKET_SIGNALS,
 } from "@/data/chinaMarket";
 
 export default function ChinaMarketSnapshot() {
   const { locale } = useLanguage();
   const zh = locale === "zh";
+  const [needsReview, setNeedsReview] = useState(false);
+
+  useEffect(() => {
+    const checkedAt = Date.parse(`${CHINA_MARKET_SNAPSHOT_DATE}T00:00:00+08:00`);
+    setNeedsReview(Date.now() - checkedAt > 7 * 24 * 60 * 60 * 1000);
+  }, []);
 
   return (
     <section className="card mb-10 animate-fade-up-delay-1" style={{ padding: "28px" }}>
@@ -32,7 +40,7 @@ export default function ChinaMarketSnapshot() {
           </p>
         </div>
         <span className="badge badge-brand">
-          {zh ? `核验日期：${CHINA_MARKET_SNAPSHOT_DATE}` : `Checked: ${CHINA_MARKET_SNAPSHOT_DATE}`}
+          {zh ? `核验日期：${CHINA_MARKET_SNAPSHOT_DATE}${needsReview ? " · 超过一周未核验" : ""}` : `Checked: ${CHINA_MARKET_SNAPSHOT_DATE}${needsReview ? " · Review overdue" : ""}`}
         </span>
       </div>
 
@@ -47,6 +55,27 @@ export default function ChinaMarketSnapshot() {
             <div style={{ color: "var(--fg-secondary)", fontSize: "0.75rem", lineHeight: 1.5, marginTop: "6px" }}>{zh ? item.labelZh : item.labelEn}</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ marginBottom: "24px" }}>
+        <div className="flex items-center gap-2" style={{ marginBottom: "12px", color: "var(--fg-primary)", fontWeight: 750 }}>
+          <Activity size={17} color="#10b981" />
+          {zh ? "近期公开就业信号" : "Recent public employment signals"}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {CHINA_RECENT_MARKET_SIGNALS.map((signal) => {
+            const source = CHINA_MARKET_SOURCES.find((item) => item.id === signal.id);
+            return (
+              <a key={signal.id} href={source?.url} target="_blank" rel="noreferrer"
+                style={{ padding: "16px", borderRadius: "14px", border: "1px solid var(--border-default)", background: "var(--bg-surface)", textDecoration: "none" }}>
+                <div style={{ color: "var(--accent-emerald)", fontSize: "1.2rem", fontWeight: 800 }}>{zh ? signal.valueZh : signal.valueEn}</div>
+                <div style={{ color: "var(--fg-primary)", fontSize: "0.79rem", fontWeight: 700, marginTop: "6px" }}>{zh ? signal.labelZh : signal.labelEn}</div>
+                <div style={{ color: "var(--fg-muted)", fontSize: "0.72rem", lineHeight: 1.5, marginTop: "6px" }}>{zh ? signal.noteZh : signal.noteEn}</div>
+                <div style={{ color: "var(--accent-cyan)", fontSize: "0.7rem", marginTop: "8px" }}>{zh ? source?.publisherZh : source?.publisherEn} · {source?.published} ↗</div>
+              </a>
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ overflowX: "auto", marginBottom: "24px" }}>
@@ -146,7 +175,7 @@ export default function ChinaMarketSnapshot() {
         </div>
         <p style={{ color: "var(--fg-muted)", fontSize: "0.7rem", lineHeight: 1.6, marginTop: "10px" }}>
           {zh
-            ? "招聘平台职位会持续变化，且部分详情需要登录或受访问限制，因此本站只提供可点击入口和核验样本，不展示无法稳定复核的所谓“实时岗位总数”。"
+            ? "招聘平台职位会持续变化，且部分详情需要登录或受访问限制，因此本站只提供可点击入口和核验样本，不展示无法稳定复核的所谓“实时岗位总数”。本站数据是定期核验的历史快照，不会因页面打开而自动变成最新数据。"
             : "Listings change continuously and some details require sign-in or restrict automated access, so this site provides verified samples and direct links instead of an unverifiable ‘live total’."}
         </p>
       </div>

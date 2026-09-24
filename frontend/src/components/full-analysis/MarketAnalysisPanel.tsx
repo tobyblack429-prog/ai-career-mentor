@@ -95,7 +95,7 @@ export default function MarketAnalysisPanel({ data, role }: Props) {
                     }}>
                         <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: hasLiveData ? "#10b981" : "#f59e0b", boxShadow: `0 0 8px ${hasLiveData ? "#10b981" : "#f59e0b"}` }} />
                         <span style={{ color: hasLiveData ? "#10b981" : "#f59e0b", fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                            {zh ? (hasLiveData ? "在线来源已核验" : "备用数据") : (hasLiveData ? "Live Verified" : "Fallback Data")}
+                            {zh ? (hasLiveData ? "在线来源已核验" : "个性化数据不可用") : (hasLiveData ? "Live Verified" : "Personalized data unavailable")}
                         </span>
                     </div>
                 </div>
@@ -130,6 +130,14 @@ export default function MarketAnalysisPanel({ data, role }: Props) {
                     </div>
                 </div>
             </div>
+
+            {!hasLiveData && (
+                <p style={{ margin: 0, padding: "16px 20px", borderRadius: "14px", color: "var(--fg-secondary)", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.18)", lineHeight: 1.6 }}>
+                    {zh
+                        ? "当前没有可核验的该职位、城市与经验级别的实时数据。上方的中国就业市场快照仍可查阅来源；它是不同口径的公开统计，不能当作该职位的薪资或岗位总数。"
+                        : "No verified live data is available for this exact role, city and seniority. The sourced China market snapshot above remains available, but its separate measures are not role-specific salary or vacancy totals."}
+                </p>
+            )}
 
             {/* ── Executive Summary ───────────────────────────────────────── */}
             {data.summary && (
