@@ -2,8 +2,8 @@ name: 每周核验中国就业市场数据
 
 on:
   schedule:
-    # UTC 周一 01:00，即北京时间周一 09:00；GitHub 定时任务可能延迟。
-    - cron: "0 1 * * 1"
+    # UTC 周一 01:17，即北京时间周一 09:17；避开整点拥堵。
+    - cron: "17 1 * * 1"
   workflow_dispatch:
 
 permissions:
