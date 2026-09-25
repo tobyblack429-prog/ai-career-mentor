@@ -21,6 +21,7 @@ from app.agents.registry import (
 def reset_circuit(monkeypatch):
     _reset_circuit_breaker()
     _CIRCUIT_BREAKER["disabled_until"] = 0.0
+    monkeypatch.setattr("app.agents.registry.settings.LLM_PROVIDER", "groq")
     monkeypatch.setattr("app.agents.registry.settings.GROQ_API_KEY", "mock-groq-key")
     monkeypatch.setattr("app.agents.registry.settings.GOOGLE_API_KEY", "mock-google-key")
     monkeypatch.setattr("app.agents.registry.settings.NVIDIA_API_KEY", "mock-nvidia-key")
@@ -94,6 +95,9 @@ class TestParseJson:
 # ── Fallback Chain ─────────────────────────────────────────────────────────────
 
 class TestFallbackChain:
+    def test_siliconflow_never_falls_back_to_paid_providers(self):
+        assert _build_fallback_chain("siliconflow") == ["siliconflow"]
+
     def test_gemini_falls_to_groq_then_nvidia(self):
         assert _build_fallback_chain("gemini") == ["gemini", "groq", "nvidia"]
 
@@ -176,6 +180,23 @@ class TestCallLlmStructured:
 # ── dispatch ───────────────────────────────────────────────────────────────────
 
 class TestDispatch:
+    def test_siliconflow_mode_forces_free_model_even_if_client_requests_groq(self, monkeypatch):
+        from app.agents.registry import settings
+
+        monkeypatch.setattr(settings, "LLM_PROVIDER", "siliconflow")
+        monkeypatch.setattr(settings, "SILICONFLOW_API_KEY", "test-key")
+        monkeypatch.setattr(settings, "SILICONFLOW_MODEL", "XingChenAGI/Xing4.0-29B")
+        calls = []
+
+        def mock_call_siliconflow(*args, **kwargs):
+            calls.append(args[2])
+            return "free response", 10, 20
+
+        monkeypatch.setattr("app.agents.registry._call_siliconflow", mock_call_siliconflow)
+        result = call_llm("system", "user", provider="groq", model="openai/gpt-oss-120b")
+        assert result == "free response"
+        assert calls == ["XingChenAGI/Xing4.0-29B"]
+
     def test_dispatch_groq(self, monkeypatch):
         def mock_call_groq(*args, **kwargs):
             return "groq response", 10, 20

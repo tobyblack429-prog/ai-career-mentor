@@ -15,6 +15,11 @@ class Settings:
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq")
     LLM_PROVIDERS_ORDER: list[str] = ["groq", "gemini", "nvidia"]
 
+    # SiliconFlow: select a model marked free in the provider's live pricing page.
+    SILICONFLOW_API_KEY: str = os.getenv("SILICONFLOW_API_KEY", "")
+    SILICONFLOW_MODEL: str = os.getenv("SILICONFLOW_MODEL", "XingChenAGI/Xing4.0-29B")
+    SILICONFLOW_API_BASE: str = "https://api.siliconflow.cn/v1"
+
     # ── GROQ (FREE — No Credit Card!) ─────────────────────────────────────────
     # Get key from: https://console.groq.com → API Keys → Create
     # Sign in with Google — that's it!
@@ -90,11 +95,26 @@ class Settings:
 
     def get_llm_config(self, provider: str = None) -> dict:
         """
-        Returns technical parameters for LLM providers (Gemini, Groq, Nvidia).
+        Returns technical parameters for supported LLM providers.
         If provider is None, uses the default from LLM_PROVIDER env.
         """
         active_provider = provider or self.LLM_PROVIDER
         
+        if active_provider == "siliconflow":
+            return {
+                "config_list": [{
+                    "model": self.SILICONFLOW_MODEL,
+                    "api_key": self.SILICONFLOW_API_KEY,
+                    "base_url": self.SILICONFLOW_API_BASE,
+                    "api_type": "openai",
+                    "price": [0.0, 0.0],
+                }],
+                "temperature": 0.7,
+                "timeout": 120,
+                "max_tokens": 4096,
+                "cache_seed": None,
+            }
+
         if active_provider in ("gemini", "google"):
             # ── Google Gemini (FREE tier via OpenAI-compatible API) ─────────────
             return {
@@ -166,16 +186,21 @@ class Settings:
 
     @property
     def is_configured(self) -> bool:
-        """Returns True if all required API keys are set."""
+        """Return True when at least one supported LLM provider is available."""
+        if self.LLM_PROVIDER == "siliconflow":
+            return bool(self.SILICONFLOW_API_KEY)
         return bool(
-            self.GROQ_API_KEY and
-            self.NVIDIA_API_KEY and
+            self.SILICONFLOW_API_KEY or
+            self.GROQ_API_KEY or
+            self.NVIDIA_API_KEY or
             self.GOOGLE_API_KEY
         )
 
     @property
     def active_model(self) -> str:
         """Returns the currently active model name for logging."""
+        if self.LLM_PROVIDER == "siliconflow":
+            return self.SILICONFLOW_MODEL
         if self.LLM_PROVIDER == "nvidia":
             return self.NVIDIA_MODEL
         elif self.LLM_PROVIDER in ("gemini", "google"):

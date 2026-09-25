@@ -1,6 +1,7 @@
 import asyncio
 import re
 import time
+from types import SimpleNamespace
 from loguru import logger
 from starlette.websockets import WebSocket, WebSocketState
 from openai import AsyncOpenAI
@@ -12,7 +13,12 @@ from app.core.llm_config import LLMConfigManager
 
 
 def _get_openai_client(provider: str = "groq"):
-    """Get an OpenAI-compatible client for NVIDIA, Gemini, or GROQ."""
+    """Get an OpenAI-compatible client for the requested provider."""
+    if provider == "siliconflow":
+        return AsyncOpenAI(
+            api_key=settings.SILICONFLOW_API_KEY,
+            base_url=settings.SILICONFLOW_API_BASE,
+        )
     if provider == "nvidia":
         return AsyncOpenAI(
             api_key=settings.NVIDIA_API_KEY,
@@ -57,6 +63,8 @@ def _extract_rate_limit_wait_secs(exc: Exception) -> float:
 
 def _select_fallback_chain(provider: str, config_fallback: list[str]) -> list[str]:
     """Order a provider-first fallback chain, skipping providers under cooldown."""
+    if settings.LLM_PROVIDER == "siliconflow":
+        return ["siliconflow"]
     if provider and provider not in config_fallback:
         chain = [provider] + config_fallback
     elif provider:
@@ -78,6 +86,11 @@ async def _safe_send_json_local(ws: WebSocket, payload: dict) -> bool:
         return False
 
 
+async def _single_text_chunk(text: str):
+    """Feed a completed response through the normal WS/TTS turn handling."""
+    yield SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=text))])
+
+
 async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_prompt: str, provider: str = "groq", tts_queue: asyncio.Queue | None = None) -> str:
     """
     Stream LLM response word-by-word over WebSocket for real-time feel.
@@ -91,12 +104,7 @@ async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_promp
     config_fallback = interview_config["fallback_chain"]
     
     # Prioritize the passed provider parameter if provided
-    if provider and provider not in config_fallback:
-        fallback_chain = [provider] + config_fallback
-    elif provider:
-        fallback_chain = [provider] + [p for p in config_fallback if p != provider]
-    else:
-        fallback_chain = config_fallback
+    fallback_chain = _select_fallback_chain(provider, config_fallback)
     
     stream = None
     last_err = None
@@ -110,6 +118,8 @@ async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_promp
                 model_name = settings.NVIDIA_MODEL
             elif provider_name in ("gemini", "google"):
                 model_name = settings.GOOGLE_MODEL
+            elif provider_name == "siliconflow":
+                model_name = settings.SILICONFLOW_MODEL
             else:
                 model_name = LLMConfigManager.get_model_for_agent("interview")
             
@@ -117,15 +127,29 @@ async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_promp
 
             start_time = time.time()
             # Use async client — does NOT block the event loop
-            stream = await client.chat.completions.create(
-                model=model_name,
-                messages=full_msgs,
-                temperature=LLMConfigManager.get_temperature_for_agent("interview"),
-                max_tokens=800,
-                stream=True,
-            )
+            request = {
+                "model": model_name,
+                "messages": full_msgs,
+                "temperature": LLMConfigManager.get_temperature_for_agent("interview"),
+                "max_tokens": 800,
+            }
+            if provider_name == "siliconflow":
+                # The current free model can exhaust a short turn on hidden
+                # reasoning, and its SSE stream may stall. A bounded complete
+                # response is more reliable for a single interview question.
+                completion = await asyncio.wait_for(
+                    client.chat.completions.create(
+                        **request, stream=False,
+                        extra_body={"enable_thinking": False},
+                    ),
+                    timeout=40,
+                )
+                answer = completion.choices[0].message.content or "" if completion.choices else ""
+                stream = _single_text_chunk(answer)
+            else:
+                stream = await client.chat.completions.create(**request, stream=True)
             active_provider = provider_name
-            logger.info(f"Interview stream initiated with provider={active_provider}, model={model_name}")
+            logger.info(f"Interview response initiated with provider={active_provider}, model={model_name}")
             break
         except Exception as e:
             logger.warning(f"Interview stream failed for provider {provider_name}: {e}")
@@ -191,11 +215,11 @@ async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_promp
 
                 # Stream text in word chunks
                 words = chunk_buffer.split(" ")
-                if len(words) >= CHUNK_SIZE:
-                    text_to_send = " ".join(words[:CHUNK_SIZE])
+                if len(words) >= CHUNK_SIZE or len(chunk_buffer) >= 24:
+                    text_to_send = " ".join(words[:CHUNK_SIZE]) if len(words) >= CHUNK_SIZE else chunk_buffer
                     if not await _safe_send_json_local(ws, {"role": "interviewer_stream", "content": text_to_send}):
                         break
-                    chunk_buffer = " ".join(words[CHUNK_SIZE:])
+                    chunk_buffer = " ".join(words[CHUNK_SIZE:]) if len(words) >= CHUNK_SIZE else ""
                 
                 # Sentence buffering for TTS — accumulate multiple sentences
                 if any(p in sentence_buffer for p in ['. ', '? ', '! ', '\n']):
@@ -241,10 +265,9 @@ async def _stream_llm_response(messages: list[dict], ws: WebSocket, system_promp
                 for task in worker_tasks:
                     if not task.done():
                         task.cancel()
-        else:
-            # For external persistent queue: just wait for our items to be processed
-            # Don't stop the worker — it's shared across messages
-            await tts_queue.join()
+        # External queues have their own persistent worker. Audio can finish
+        # after the text turn; waiting here delays the question and may cause
+        # the browser to abandon the WebSocket before the turn is committed.
     finally:
         # If local queue, ensure workers are cleaned up (should already be done above)
         pass
@@ -280,12 +303,7 @@ async def _generate_json_non_stream(
     agent_config = LLMConfigManager.get_agent_config(agent_name)
     config_fallback = agent_config["fallback_chain"]
 
-    if provider and provider not in config_fallback:
-        chain = [provider] + config_fallback
-    elif provider:
-        chain = [provider] + [p for p in config_fallback if p != provider]
-    else:
-        chain = config_fallback
+    chain = _select_fallback_chain(provider, config_fallback)
 
     last_err: Exception | None = None
 
@@ -298,6 +316,8 @@ async def _generate_json_non_stream(
                 model_name = settings.NVIDIA_MODEL
             elif provider_name in ("gemini", "google"):
                 model_name = settings.GOOGLE_MODEL
+            elif provider_name == "siliconflow":
+                model_name = settings.SILICONFLOW_MODEL
             else:
                 model_name = agent_config["model"]
 
@@ -355,12 +375,7 @@ async def _generate_interview_text_non_stream(messages: list[dict], system_promp
     interview_config = LLMConfigManager.get_agent_config("interview")
     config_fallback = interview_config["fallback_chain"]
 
-    if provider and provider not in config_fallback:
-        fallback_chain = [provider] + config_fallback
-    elif provider:
-        fallback_chain = [provider] + [p for p in config_fallback if p != provider]
-    else:
-        fallback_chain = config_fallback
+    fallback_chain = _select_fallback_chain(provider, config_fallback)
 
     last_err = None
     active_provider = None
@@ -375,6 +390,8 @@ async def _generate_interview_text_non_stream(messages: list[dict], system_promp
                 model_name = settings.NVIDIA_MODEL
             elif provider_name in ("gemini", "google"):
                 model_name = settings.GOOGLE_MODEL
+            elif provider_name == "siliconflow":
+                model_name = settings.SILICONFLOW_MODEL
             else:
                 model_name = interview_config["model"]
 
@@ -419,12 +436,7 @@ async def _generate_feedback_non_stream(messages: list[dict], system_prompt: str
     interview_config = LLMConfigManager.get_agent_config("interview_feedback")
     config_fallback = interview_config["fallback_chain"]
     
-    if provider and provider not in config_fallback:
-        fallback_chain = [provider] + config_fallback
-    elif provider:
-        fallback_chain = [provider] + [p for p in config_fallback if p != provider]
-    else:
-        fallback_chain = config_fallback
+    fallback_chain = _select_fallback_chain(provider, config_fallback)
 
     last_err = None
     active_provider = None
@@ -437,6 +449,8 @@ async def _generate_feedback_non_stream(messages: list[dict], system_prompt: str
             models_to_try = [settings.NVIDIA_MODEL]
         elif provider_name in ("gemini", "google"):
             models_to_try = [settings.GOOGLE_MODEL]
+        elif provider_name == "siliconflow":
+            models_to_try = [settings.SILICONFLOW_MODEL]
         elif provider_name == "groq":
             # Try GPT-OSS 120B first, fallback to GPT-OSS 20B
             models_to_try = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]

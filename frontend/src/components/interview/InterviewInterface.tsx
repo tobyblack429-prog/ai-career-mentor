@@ -112,8 +112,10 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
     const onErrorRef = useRef<((event: Event) => void) | null>(null);
     const isMountedRef = useRef(true);
     const isReconnectingRef = useRef(false);
-    const hasReceivedMessageRef = useRef(false);
+    const hasReceivedQuestionRef = useRef(false);
+    const waitingForInterviewerRef = useRef(true);
     const lastMessageTimeRef = useRef(0);
+    const startupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const staleCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const STALE_WS_TIMEOUT = 60000; // 60s without any message = stale
     const MAX_RECONNECT_ATTEMPTS = 5;
@@ -193,7 +195,8 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
         isClosedByUserRef.current = false;
         isFinishedRef.current = false;
         reconnectAttemptsRef.current = 0;
-        hasReceivedMessageRef.current = false;
+        hasReceivedQuestionRef.current = false;
+        waitingForInterviewerRef.current = true;
         lastMessageTimeRef.current = Date.now();
 
         const activeProvider = localStorage.getItem("preferred_provider") || "groq";
@@ -217,8 +220,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                 return;
             }
 
-            // Mark that we've received data — connection is healthy
-            hasReceivedMessageRef.current = true;
+            // Record the latest server activity for in-flight response checks.
             lastMessageTimeRef.current = Date.now();
             reconnectAttemptsRef.current = 0; // Reset reconnect counter on successful message
 
@@ -237,6 +239,9 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                 setIsThinking(false);
             } else if (data.role === "interviewer") {
                 if (data.type === "question" || data.type === "concluding") {
+                    hasReceivedQuestionRef.current = true;
+                    waitingForInterviewerRef.current = false;
+                    setIsThinking(false);
                     if (typeof data.question_number === "number") {
                         setQuestionCount(data.question_number);
                     } else {
@@ -250,6 +255,8 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                     }
                 }
                 if (data.type === "feedback") {
+                    waitingForInterviewerRef.current = false;
+                    setIsThinking(false);
                     const scoreMatch = data.content.match(/OVERALL SCORE\s*:\s*(\d+)/i);
                     if (scoreMatch) finalScoreRef.current = parseInt(scoreMatch[1]);
                     finalFeedbackRef.current = data.content;
@@ -261,7 +268,12 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
                     return;
                 }
                 if (data.content) {
-                    setMessages(prev => [...prev, { role: "interviewer", content: data.content }]);
+                    setMessages(prev => {
+                        const last = prev[prev.length - 1];
+                        return last?.role === "interviewer" && last.content === data.content
+                            ? prev
+                            : [...prev, { role: "interviewer", content: data.content }];
+                    });
                     setStreamingMessage("");
                     streamBufferRef.current = "";
                 }
@@ -388,8 +400,10 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
         staleCheckIntervalRef.current = setInterval(() => {
             if (isFinishedRef.current || isClosedByUserRef.current) return;
             const now = Date.now();
-            // If we've received at least one message but nothing for 60s, force reconnect
-            if (hasReceivedMessageRef.current && (now - lastMessageTimeRef.current) > STALE_WS_TIMEOUT) {
+            // An idle candidate may spend minutes thinking. Reconnect only
+            // while an answer is actually waiting for the interviewer.
+            if (hasReceivedQuestionRef.current && waitingForInterviewerRef.current &&
+                (now - lastMessageTimeRef.current) > STALE_WS_TIMEOUT) {
                 console.warn("WebSocket appears stale — forcing reconnect");
                 if (wsRef.current) {
                     try { wsRef.current.close(); } catch { /* ignore */ }
@@ -400,6 +414,18 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
 
         // Initial connection
         connectWebSocket();
+        startupTimeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current && !hasReceivedQuestionRef.current &&
+                !isClosedByUserRef.current && !isFinishedRef.current) {
+                isClosedByUserRef.current = true;
+                setConnectionError(locale === "zh"
+                    ? "面试题目等待超时，请返回面试设置后重试。"
+                    : "The interview question timed out. Go back and try again.");
+                setStatus("Connection Lost");
+                setIsThinking(false);
+                wsRef.current?.close();
+            }
+        }, 60000);
 
         // ── Cleanup ──
         return () => {
@@ -408,6 +434,7 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
             if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
             if (staleCheckIntervalRef.current) clearInterval(staleCheckIntervalRef.current);
             if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+            if (startupTimeoutRef.current) clearTimeout(startupTimeoutRef.current);
             if (wsRef.current) {
                 try { wsRef.current.close(); } catch { /* ignore */ }
             }
@@ -451,6 +478,8 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
         const fullMsg = parts.join("\n\n");
 
         wsRef.current?.send(fullMsg);
+        waitingForInterviewerRef.current = true;
+        lastMessageTimeRef.current = Date.now();
         setMessages(prev => [...prev, { role: "candidate", content: fullMsg }]);
         setInputVal("");
         setCodeVal("// Write your code here...\n");

@@ -68,7 +68,19 @@ FEEDBACK_CONCLUDING_TEMPLATE = (
 
 def _has_interview_provider_key() -> bool:
     """Avoid opening a billed interview session when no model can answer."""
+    if settings.LLM_PROVIDER == "siliconflow":
+        return bool(settings.SILICONFLOW_API_KEY)
     return any((settings.GROQ_API_KEY, settings.GOOGLE_API_KEY, settings.NVIDIA_API_KEY))
+
+
+def _latest_unanswered_question(history: list[dict]) -> dict | None:
+    """Return the question a reconnecting client has not answered yet."""
+    if not history:
+        return None
+    last = history[-1]
+    if last.get("role") == "interviewer" and last.get("type") == "question":
+        return last
+    return None
 
 
 # ── Safe WebSocket Send & Close Helpers ─────────────────────────────────────
@@ -408,9 +420,9 @@ async def handle_websocket_connection(
     await websocket.accept()
     if not _has_interview_provider_key():
         message = (
-            "AI 面试官尚未配置模型密钥。请在后端 .env 中配置 GROQ_API_KEY、GOOGLE_API_KEY 或 NVIDIA_API_KEY 后重试。"
+            "AI 面试官尚未配置模型密钥。请在后端 .env 中配置所选服务商的 API Key 后重试。"
             if language == "zh" else
-            "The AI interviewer needs a model key. Set GROQ_API_KEY, GOOGLE_API_KEY, or NVIDIA_API_KEY in backend/.env and try again."
+            "The AI interviewer needs an API key for the selected provider in backend/.env."
         )
         await _safe_send_json(websocket, {"role": "system", "type": "error", "content": message})
         await _safe_close(websocket, code=1013)
@@ -494,6 +506,20 @@ async def handle_websocket_connection(
     session_data.setdefault("language", language)
     session_data.setdefault("metrics", {"invalid_response": 0, "fallback_question": 0, "hint_usage": 0, "followup_usage": 0})
 
+    # A browser may reconnect after the question was saved but before its
+    # WebSocket frame arrived. Replay that pending question instead of waiting
+    # forever for a candidate answer the browser cannot submit.
+    pending_question = _latest_unanswered_question(session_data["history"])
+    if pending_question:
+        await _safe_send_json(websocket, {
+            "role": "interviewer",
+            "type": "question",
+            "content": pending_question["content"],
+            "question_number": pending_question.get("question_number", question_count),
+            "total_questions": pending_question.get("total_questions", TOTAL_INTERVIEW_QUESTIONS),
+            "phase_name": pending_question.get("phase_name", ""),
+        })
+
     # ── Persistent TTS Worker (lives across all messages) ──────────────────
     persistent_tts_queue = asyncio.Queue()
 
@@ -545,9 +571,9 @@ async def handle_websocket_connection(
             return
 
         if not msg_content:
-            await _safe_send_json(websocket, {"role": "system", "type": "error", "content": "面试官未能生成问题，请检查模型服务后重试。" if language == "zh" else "The interviewer could not generate a question. Check the model service and try again."})
-            await _safe_close(websocket, code=1011)
-            return
+            session_data["metrics"]["fallback_question"] += 1
+            logger.warning("[interview] First model turn had no answer text; using intro fallback.")
+            msg_content = build_fallback_question(1, language)
 
         # Intro may legitimately be an imperative ("Tell me about yourself").
         ok, reasons = validate_clean_spoken_turn(msg_content)
@@ -572,7 +598,7 @@ async def handle_websocket_connection(
         await asyncio.to_thread(update_session_state, session_id, chat_history=session_data["history"])
 
         # Stream complete message for offline/older clients with progress metadata
-        await _safe_send_json(websocket, {
+        first_question_delivered = await _safe_send_json(websocket, {
             "role": "interviewer",
             "type": "question",
             "content": msg_content,
@@ -581,8 +607,11 @@ async def handle_websocket_connection(
             "phase_name": phase_1_name,
         })
 
-        increment_usage(current_user_id, "interview")
-        await asyncio.to_thread(log_interview_start, current_user_id, role)
+        if first_question_delivered:
+            increment_usage(current_user_id, "interview")
+            await asyncio.to_thread(log_interview_start, current_user_id, role)
+        else:
+            logger.warning("[interview] First question saved but not delivered; it will be replayed on reconnect.")
 
     # ── Main conversation loop ────────────────────────────────────────────
     try:
@@ -708,8 +737,15 @@ async def handle_websocket_connection(
                 break
 
             if not msg_content:
-                await _safe_send_json(websocket, {"role": "system", "type": "error", "content": "面试官未能生成回复，请检查模型服务后重新开始。" if language == "zh" else "The interviewer could not generate a response. Check the model service and start again."})
-                break
+                session_data["metrics"]["fallback_question"] += 1
+                logger.warning(f"[interview] Model turn had no answer text; using fallback for phase {asked_phase}.")
+                msg_content = (
+                    "感谢参加面试。我会整理你的表现并生成评估报告。"
+                    if language == "zh" and (asked_phase >= 11 or next_mode == "conclude")
+                    else FEEDBACK_CONCLUDING_TEMPLATE
+                    if asked_phase >= 11 or next_mode == "conclude"
+                    else build_fallback_question(asked_phase, language)
+                )
 
             # ── 5. Guardrails: validate, regenerate once, then fallback ─────
             if next_mode == "conclude" or asked_phase >= 11:

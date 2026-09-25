@@ -102,13 +102,16 @@ def call_llm(
         logger.warning("Circuit breaker OPEN (global) — skipping LLM call.")
         return None
 
-    original_provider = provider or (settings.LLM_PROVIDERS_ORDER[0] if settings.LLM_PROVIDERS_ORDER else settings.LLM_PROVIDER)
+    # Free-model mode must never fall through to a different (possibly paid) provider.
+    original_provider = "siliconflow" if settings.LLM_PROVIDER == "siliconflow" else (provider or (settings.LLM_PROVIDERS_ORDER[0] if settings.LLM_PROVIDERS_ORDER else settings.LLM_PROVIDER))
 
-    raw_fallback_chain = fallback_chain if fallback_chain is not None else _build_fallback_chain(original_provider)
+    raw_fallback_chain = ["siliconflow"] if settings.LLM_PROVIDER == "siliconflow" else (fallback_chain if fallback_chain is not None else _build_fallback_chain(original_provider))
     
     # Filter out providers that do not have their API keys configured in settings
     actual_fallback_chain = []
     for p in raw_fallback_chain:
+        if p == "siliconflow" and not settings.SILICONFLOW_API_KEY:
+            continue
         if p in ("gemini", "google") and not settings.GOOGLE_API_KEY:
             continue
         if p == "groq" and not settings.GROQ_API_KEY:
@@ -154,7 +157,7 @@ def call_llm(
             try:
                 start_time = time.time()
                 # Dynamically resolve model ID for fallback provider to avoid 404s
-                active_model = model
+                active_model = settings.SILICONFLOW_MODEL if active_provider == "siliconflow" else model
                 if active_provider != original_provider:
                     if active_provider == "groq":
                         active_model = settings.GROQ_MODEL
@@ -162,6 +165,8 @@ def call_llm(
                         active_model = settings.NVIDIA_MODEL
                     elif active_provider in ("gemini", "google"):
                         active_model = settings.GOOGLE_MODEL
+                    elif active_provider == "siliconflow":
+                        active_model = settings.SILICONFLOW_MODEL
 
                 response_text, in_t, out_t = _dispatch(
                     active_provider,
@@ -360,6 +365,7 @@ def parse_json(text: Any) -> Optional[Any]:
 
 def _build_fallback_chain(provider: str) -> list[str]:
     chains = {
+        "siliconflow": ["siliconflow"],
         "groq":     ["groq", "gemini", "nvidia"],
         "gemini":   ["gemini", "groq", "nvidia"],
         "google":   ["google", "groq", "nvidia"],
@@ -401,6 +407,8 @@ def _dispatch(
     If model is None, the provider's own default (from settings) is used.
     """
     actual_model = model  # This is now set by LLMConfigManager per agent!
+    if provider == "siliconflow":
+        return _call_siliconflow(system_prompt, user_content, actual_model, temperature=temperature, json_mode=json_mode)
     if provider == "nvidia":
         return _call_nvidia(system_prompt, user_content, actual_model, temperature=temperature, json_mode=json_mode)
     elif provider == "groq":
@@ -490,6 +498,49 @@ def _call_groq(
     in_t = usage.get("prompt_tokens", 0)
     out_t = usage.get("completion_tokens", 0)
     return resp_json["choices"][0]["message"]["content"], in_t, out_t
+
+
+def _call_siliconflow(
+    system_prompt: str,
+    user_content: str,
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    json_mode: bool = False,
+) -> tuple[str, int, int]:
+    safe_prompt = system_prompt if "json" in system_prompt.lower() else system_prompt + "\n\nYou must output in JSON format."
+    payload = {
+        "model": model or settings.SILICONFLOW_MODEL,
+        "messages": [
+            {"role": "system", "content": safe_prompt if json_mode else system_prompt},
+            {"role": "user", "content": user_content},
+        ],
+        "temperature": temperature if temperature is not None else 0.7,
+        "max_tokens": 4096,
+    }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+
+    with httpx.Client() as client:
+        resp = client.post(
+            f"{settings.SILICONFLOW_API_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.SILICONFLOW_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=90.0,
+        )
+    if resp.status_code != 200:
+        if resp.status_code in (401, 402, 403):
+            raise ProviderAuthError(f"SiliconFlow API {resp.status_code}")
+        raise ValueError(f"SiliconFlow API {resp.status_code}")
+    result = resp.json()
+    usage = result.get("usage", {})
+    return (
+        result["choices"][0]["message"]["content"],
+        usage.get("prompt_tokens", 0),
+        usage.get("completion_tokens", 0),
+    )
 
 
 def _call_gemini(

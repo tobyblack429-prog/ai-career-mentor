@@ -42,7 +42,8 @@ function Test-ServiceReady([string]$Name) {
                 $health.status -eq 'ok' -and $health.database -eq 'connected')
         }
         $response = Invoke-WebRequest $siteUrl -UseBasicParsing -TimeoutSec 8
-        return ($response.StatusCode -eq 200 -and $response.Content -match 'CareerMentor')
+        return ($response.StatusCode -eq 200 -and
+            $response.Content -match '<title>[^<]*(CareerMentor|我的职业规划ai导师)')
     } catch {
         return $false
     }

@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 AI Career Mentor API starting...")
     logger.info(f"   NVIDIA Model    : {settings.NVIDIA_MODEL}")
     logger.info(f"   Groq Model     : {settings.GROQ_MODEL}")
+    logger.info(f"   SiliconFlow Model: {settings.SILICONFLOW_MODEL}")
     logger.info(f"   Gemini Model   : {settings.GOOGLE_MODEL}")
     logger.info(f"   Database       : {settings.DATABASE_URL}")
     logger.info(f"   API Keys       : {'✅ Configured' if settings.is_configured else '❌ MISSING — check .env!'}")
@@ -44,8 +45,8 @@ async def lifespan(app: FastAPI):
         if os.getenv("CI") == "true" or os.getenv("TESTING") == "true" or os.getenv("BYPASS_KEY_CHECK") == "true":
             logger.warning("⚠️ Warning: Required LLM API Keys are missing, but continuing startup because CI/Testing/Bypass mode is enabled.")
         else:
-            logger.error("❌ CRITICAL: One or more required LLM API Keys are missing or invalid!")
-            raise ValueError("Missing required LLM API Keys for hybrid multi-provider features.")
+            logger.error("❌ CRITICAL: No API Key is configured for the selected LLM provider!")
+            raise ValueError("Missing API Key for the selected LLM provider.")
 
     # Auto-seed our gold-standard curated links into ChromaDB
     try:

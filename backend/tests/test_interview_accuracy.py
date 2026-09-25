@@ -237,6 +237,8 @@ def test_missing_interview_provider_keys(monkeypatch):
     from app.core.interview.websocket_manager import _has_interview_provider_key
     from app.core.config import settings
 
+    monkeypatch.setattr(settings, "LLM_PROVIDER", "groq")
+
     for key in ("GROQ_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY"):
         monkeypatch.setattr(settings, key, "")
     assert not _has_interview_provider_key()
@@ -250,7 +252,7 @@ def test_websocket_reports_missing_model_key(monkeypatch):
     from app.core.config import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", True)
-    for key in ("GROQ_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY"):
+    for key in ("GROQ_API_KEY", "GOOGLE_API_KEY", "NVIDIA_API_KEY", "SILICONFLOW_API_KEY"):
         monkeypatch.setattr(settings, key, "")
     with TestClient(app) as client:
         with client.websocket_connect("/interview/ws/test-no-key?language=zh") as websocket:
@@ -501,7 +503,10 @@ def test_build_interview_system_prompt_determinism():
     assert "Google" in p1
 
 
-def test_llm_config_manager():
+def test_llm_config_manager(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "LLM_PROVIDER", "groq")
     eval_config = LLMConfigManager.get_agent_config("interview_evaluator")
     assert eval_config is not None
     assert eval_config["capability"] == "structured_json"

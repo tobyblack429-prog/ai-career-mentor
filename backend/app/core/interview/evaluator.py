@@ -17,7 +17,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.observability import track_llm_call
-from app.core.interview.llm import _get_openai_client, _is_under_cooldown, _apply_provider_cooldown
+from app.core.interview.llm import _get_openai_client, _is_under_cooldown, _apply_provider_cooldown, _select_fallback_chain
 from app.core.interview.schemas import AnswerEvaluation
 from app.core.llm_config import LLMConfigManager
 
@@ -105,12 +105,7 @@ async def evaluate_answer(
     config = LLMConfigManager.get_agent_config("interview_evaluator")
     fallback_chain = config["fallback_chain"]
 
-    if provider and provider not in fallback_chain:
-        chain = [provider] + fallback_chain
-    elif provider:
-        chain = [provider] + [p for p in fallback_chain if p != provider]
-    else:
-        chain = fallback_chain
+    chain = _select_fallback_chain(provider, fallback_chain)
 
     user_prompt = _build_evaluator_user_prompt(phase, question or "", answer or "", experience_level, candidate_context)
 
@@ -127,6 +122,8 @@ async def evaluate_answer(
                 model_name = settings.NVIDIA_MODEL
             elif provider_name in ("gemini", "google"):
                 model_name = settings.GOOGLE_MODEL
+            elif provider_name == "siliconflow":
+                model_name = settings.SILICONFLOW_MODEL
             else:
                 model_name = LLMConfigManager.get_model_for_agent("interview_evaluator")
             resp = await client.chat.completions.create(

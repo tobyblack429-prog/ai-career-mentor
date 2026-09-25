@@ -12,6 +12,7 @@ import os
 from typing import Optional
 
 from loguru import logger
+from app.core.config import settings
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -122,6 +123,14 @@ class LLMConfigManager:
         3. Global fallback (groq)
         """
         profile = AGENT_PROFILES.get(agent_name)
+        if settings.LLM_PROVIDER == "siliconflow":
+            return {
+                "provider": "siliconflow",
+                "model": settings.SILICONFLOW_MODEL,
+                "temperature": profile["default_temperature"] if profile else 0.7,
+                "fallback_chain": ["siliconflow"],
+                "capability": profile["capability"] if profile else "unknown",
+            }
         if not profile:
             logger.warning(f"No LLM profile found for agent '{agent_name}' — using global defaults")
             return cls._global_fallback()
@@ -169,6 +178,14 @@ class LLMConfigManager:
     @classmethod
     def _global_fallback(cls) -> dict:
         """Fallback when no profile exists."""
+        if settings.LLM_PROVIDER == "siliconflow":
+            return {
+                "provider": "siliconflow",
+                "model": settings.SILICONFLOW_MODEL,
+                "temperature": 0.7,
+                "fallback_chain": ["siliconflow"],
+                "capability": "unknown",
+            }
         return {
             "provider": os.getenv("LLM_PROVIDER", "groq"),
             "model": os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
