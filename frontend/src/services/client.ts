@@ -2,7 +2,8 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 
 const client = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+    baseURL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:8000"),
+    withCredentials: true,
     headers: { "Content-Type": "application/json" },
 });
 
@@ -31,7 +32,7 @@ export default client;
 
 /** Returns the base API URL for use with native fetch() SSE calls. */
 export const getBaseUrl = (): string =>
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:8000");
 
 /** Returns Authorization header for use with native fetch() calls. */
 export const getAuthHeaders = (): Record<string, string> => {

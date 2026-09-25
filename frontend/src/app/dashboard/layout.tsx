@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import { Menu, X } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { api } from "@/services/api";
 
 export default function DashboardLayout({
   children,
@@ -12,7 +13,21 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionError, setSessionError] = useState(false);
+  const [sessionAttempt, setSessionAttempt] = useState(0);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    let active = true;
+    setSessionError(false);
+    void api.post("/auth/anonymous-session").then(() => {
+      if (active) setSessionReady(true);
+    }).catch(() => {
+      if (active) setSessionError(true);
+    });
+    return () => { active = false; };
+  }, [sessionAttempt]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768);
@@ -20,6 +35,19 @@ export default function DashboardLayout({
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  if (!sessionReady) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4" style={{ background: "var(--bg-base)", color: "var(--fg-primary)" }}>
+        <p>{sessionError ? "访客会话连接失败，请检查网络后重试。" : "正在准备安全访客会话…"}</p>
+        {sessionError && (
+          <button type="button" onClick={() => setSessionAttempt((attempt) => attempt + 1)} className="rounded-lg px-4 py-2" style={{ background: "var(--brand)", color: "white" }}>
+            重试
+          </button>
+        )}
+      </main>
+    );
+  }
 
   return (
     <div className="flex min-h-screen" style={{ background: "var(--bg-base)", color: "var(--fg-primary)" }}>
@@ -54,6 +82,11 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div className="flex-1 min-w-0">
+        {process.env.NODE_ENV === "production" && (
+          <p className="px-4 py-2 text-center" style={{ fontSize: "0.75rem", color: "var(--fg-muted)", background: "var(--bg-elevated)" }}>
+            访客数据仅属于当前浏览器；清除浏览器数据后将无法找回历史记录。请勿上传含敏感信息的真实简历。
+          </p>
+        )}
         {/* Mobile Top Bar */}
         {isMobile && (
           <div

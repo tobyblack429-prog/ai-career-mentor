@@ -1,6 +1,8 @@
 import os
 import sys
 import pytest
+import tempfile
+import uuid
 from pathlib import Path
 
 # Ensure backend root is in sys.path
@@ -8,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Override the database URL to use a dedicated test database
 # This keeps tests completely isolated from the local dev database (dev.db)
-TEST_DB_PATH = Path(__file__).parent.parent / "test.db"
+TEST_DB_PATH = Path(tempfile.gettempdir()) / f"careermentor-test-{uuid.uuid4().hex}.db"
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH}"
 os.environ["AUTH_DISABLED"] = "false"
 

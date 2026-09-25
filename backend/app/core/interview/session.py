@@ -30,11 +30,14 @@ def _purge_stale_sessions():
         logger.info(f"[interview] Purged {len(stale_keys)} stale sessions from memory.")
 
 
-def _get_user_from_token(token: str | None, db: Session) -> User | None:
-    """Decode JWT token and retrieve the user."""
+def _get_user_from_token(token: str | None, db: Session, anonymous_cookie: str | None = None) -> User | None:
+    """Resolve the configured identity; public anonymous mode requires its signed cookie."""
     if settings.AUTH_DISABLED:
         from app.api.deps import get_or_create_guest_user
         return get_or_create_guest_user(db)
+    if settings.PUBLIC_ANONYMOUS_ACCESS:
+        from app.api.deps import get_anonymous_user
+        return get_anonymous_user(anonymous_cookie, db)
     if not token:
         return None
     try:

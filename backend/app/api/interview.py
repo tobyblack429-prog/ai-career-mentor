@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.models import InterviewSession
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, is_allowed_public_origin
 from app.core.interview.websocket_manager import handle_websocket_connection
 
 router = APIRouter()
@@ -24,6 +24,11 @@ async def websocket_endpoint(
     language: str = Query("en")
 ):
     """Establishes the WebSocket connection and delegates execution to core manager."""
+    from app.core.config import settings
+    if settings.PUBLIC_ANONYMOUS_ACCESS and not settings.AUTH_DISABLED:
+        if not is_allowed_public_origin(websocket.headers.get("origin"), websocket.headers) or "token" in websocket.query_params:
+            await websocket.close(code=1008)
+            return
     await handle_websocket_connection(
         websocket=websocket,
         session_id=session_id,
@@ -32,6 +37,7 @@ async def websocket_endpoint(
         company_style=company_style,
         company_tier=company_tier,
         token=token,
+        anonymous_cookie=websocket.cookies.get(settings.ANONYMOUS_SESSION_COOKIE),
         type=type,
         provider=provider,
         role_level=role_level,

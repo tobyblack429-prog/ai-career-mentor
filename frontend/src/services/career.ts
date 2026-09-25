@@ -48,6 +48,7 @@ export const runFullAnalysisNew = async (
 
     const response = await fetch(`${getBaseUrl()}/career/full-analysis/stream`, {
         method: "POST",
+        credentials: "include",
         headers: {
             "Content-Type": "application/json",
             ...getAuthHeaders(),

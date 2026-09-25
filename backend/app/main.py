@@ -2,7 +2,7 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
@@ -22,6 +22,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from app.core.limiter import limiter
+from app.core.rate_limit import reserve_public_quota
 
 from app.core.resume.rag_service import rag_engine
 
@@ -36,7 +37,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"   Groq Model     : {settings.GROQ_MODEL}")
     logger.info(f"   SiliconFlow Model: {settings.SILICONFLOW_MODEL}")
     logger.info(f"   Gemini Model   : {settings.GOOGLE_MODEL}")
-    logger.info(f"   Database       : {settings.DATABASE_URL}")
+    logger.info(f"   Database       : {settings.DATABASE_URL.split(':', 1)[0]} configured")
     logger.info(f"   API Keys       : {'✅ Configured' if settings.is_configured else '❌ MISSING — check .env!'}")
     logger.info(f"   Docs           : http://localhost:8000/docs")
     logger.info("=" * 50)
@@ -108,7 +109,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,  # CORS allowed domains frontend ke liye config karta hai
-    allow_origin_regex=r"https://.*\.vercel\.app",  # Regex match se Vercel ke temporary preview dynamic subdomains ko bypass karta hai
+    allow_origin_regex=None if settings.PUBLIC_ANONYMOUS_ACCESS else r"https://.*\.vercel\.app",
     allow_credentials=True,  # Frontend se cookies aur auth headers receive karne ki authorization
     allow_methods=["*"],  # Saare HTTP request methods (GET, POST, etc.) allowed hain
     allow_headers=["*"],  # Saare custom headers pass karne ki permission deta hai
@@ -148,6 +149,34 @@ async def log_requests(request: Request, call_next):
             status_code=500,
             content={"detail": "An internal server error occurred. Please try again later."},
         )
+
+
+_PUBLIC_QUOTA_ROUTES = {
+    ("POST", "/resume/upload"): "resume_upload",
+    ("POST", "/resume/analyze"): "resume",
+    ("POST", "/roadmap/generate"): "roadmap",
+    ("GET", "/market/trends"): "market",
+    ("POST", "/career/full-analysis/stream"): "full_analysis",
+    ("POST", "/linkedin/optimize"): "linkedin",
+}
+
+
+@app.middleware("http")
+async def enforce_public_quota(request: Request, call_next):
+    if getattr(settings, "PUBLIC_ANONYMOUS_ACCESS", False):
+        path = request.url.path.removeprefix("/api")
+        feature = _PUBLIC_QUOTA_ROUTES.get((request.method, path))
+        if feature:
+            # Vercel overwrites X-Forwarded-For at the edge, preventing spoofing.
+            client_ip = (
+                request.headers.get("x-forwarded-for") if os.getenv("VERCEL")
+                else request.client.host if request.client else "unknown"
+            ) or "unknown"
+            try:
+                reserve_public_quota(client_ip, feature)
+            except HTTPException as exc:
+                return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return await call_next(request)
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 from app.api import auth, resume, roadmap, market, career, linkedin, interview, user

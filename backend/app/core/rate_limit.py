@@ -8,6 +8,8 @@ Bypassed if settings.DEBUG is True (Local machine testing).
 """
 
 import os
+import hashlib
+import hmac
 from datetime import timezone, datetime, timedelta
 from typing import Optional
 from fastapi import HTTPException, status
@@ -24,6 +26,20 @@ DAILY_LIMITS: dict[str, int] = {
     "linkedin":      1,
     "market":        1,
 }
+
+# Anonymous public demos need a second quota that survives cookie deletion.
+# These are intentionally small because each request can consume a paid model call.
+PUBLIC_IP_DAILY_LIMITS: dict[str, int] = {
+    "session": 5,
+    "interview": 2,
+    "resume": 3,
+    "resume_upload": 5,
+    "roadmap": 3,
+    "full_analysis": 2,
+    "linkedin": 3,
+    "market": 3,
+}
+PUBLIC_GLOBAL_DAILY_LIMIT = 60
 
 GAP_BLOCK_DAYS: dict[str, int] = {
     "full_analysis": 7,
@@ -59,6 +75,40 @@ _usage_block_fallback: dict[str, dict[str, dict]] = {}
 def _get_today_str() -> str:
     """Current UTC date string (YYYY-MM-DD)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def reserve_public_quota(client_ip: str, feature: str) -> None:
+    """Atomically reserve an IP and site-wide slot before a public AI call."""
+    if not getattr(settings, "PUBLIC_ANONYMOUS_ACCESS", False):
+        return
+    if feature not in PUBLIC_IP_DAILY_LIMITS:
+        raise ValueError("Unknown public quota feature")
+    if redis_client is None:
+        raise HTTPException(status_code=503, detail="公开服务限额暂不可用，请稍后再试。")
+
+    safe_ip = (client_ip or "unknown").split(",", 1)[0].strip()
+    ip_digest = hmac.new(
+        settings.SECRET_KEY.encode("utf-8"), safe_ip.encode("utf-8"), hashlib.sha256
+    ).hexdigest()[:32]
+    today = _get_today_str()
+    ip_key = f"public:ip:{ip_digest}:{feature}:{today}"
+    global_key = f"public:global:{today}"
+    try:
+        transaction = redis_client.pipeline(transaction=True)
+        transaction.incr(ip_key)
+        transaction.expire(ip_key, 172800)
+        if feature != "session":
+            transaction.incr(global_key)
+            transaction.expire(global_key, 172800)
+        counts = transaction.execute()
+    except Exception:
+        logger.error("Public quota storage unavailable")
+        raise HTTPException(status_code=503, detail="公开服务限额暂不可用，请稍后再试。")
+
+    if int(counts[0]) > PUBLIC_IP_DAILY_LIMITS[feature]:
+        raise HTTPException(status_code=429, detail="当前网络的今日使用次数已达上限。")
+    if feature != "session" and int(counts[2]) > PUBLIC_GLOBAL_DAILY_LIMIT:
+        raise HTTPException(status_code=429, detail="网站今日 AI 体验额度已用完，请明天再试。")
 
 
 def get_usage(user_id: str | int, feature: str) -> int:
@@ -231,4 +281,3 @@ def get_gap_block_remaining_seconds(user_id: str | int, feature: str) -> Optiona
         return int(remaining) if remaining > 0 else None
 
     return None
-

@@ -4,7 +4,7 @@ from loguru import logger
 
 # ── Safe Import with Mock Fallback (Fail-Safe Engineering) ─────────────────────
 CHROMA_AVAILABLE = True
-if os.environ.get("RENDER") or os.environ.get("DISABLE_CHROMA") == "true":
+if os.environ.get("RENDER") or os.environ.get("VERCEL") or os.environ.get("DISABLE_CHROMA") == "true":
     CHROMA_AVAILABLE = False
     logger.info("ℹ️ Running in Render/low-memory environment. Disabling ChromaDB to prevent ONNX model download OOM (512MB RAM limit). Using memory-efficient in-memory fallback.")
 else:

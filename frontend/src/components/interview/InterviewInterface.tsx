@@ -204,8 +204,9 @@ export default function InterviewInterface({ role, company, type, roleLevel, onE
             sessionIdRef.current = Date.now().toString();
         }
         const sessionId = sessionIdRef.current;
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-        const wsUrl = apiUrl.replace("http", "ws") + `/interview/ws/${sessionId}?role=${encodeURIComponent(role)}&company=${encodeURIComponent(company.name)}&company_tier=${company.tier}&company_style=${encodeURIComponent(company.interviewStyle)}&type=${encodeURIComponent(type)}&provider=${activeProvider}&language=${locale}${roleLevel ? `&role_level=${encodeURIComponent(roleLevel)}` : ""}`;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:8000");
+        const absoluteApiUrl = apiUrl.startsWith("/") ? `${window.location.origin}${apiUrl}` : apiUrl;
+        const wsUrl = absoluteApiUrl.replace(/^http/, "ws") + `/interview/ws/${sessionId}?role=${encodeURIComponent(role)}&company=${encodeURIComponent(company.name)}&company_tier=${company.tier}&company_style=${encodeURIComponent(company.interviewStyle)}&type=${encodeURIComponent(type)}&provider=${activeProvider}&language=${locale}${roleLevel ? `&role_level=${encodeURIComponent(roleLevel)}` : ""}`;
         wsUrlRef.current = wsUrl;
 
         // ── Message handler (shared across reconnects) ──

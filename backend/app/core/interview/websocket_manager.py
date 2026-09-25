@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime, timezone
 import time as _time
 from loguru import logger
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 from sqlalchemy.orm import Session
 
@@ -176,12 +176,15 @@ def load_initial_interview_data(session_id: str, current_user_id: int, current_u
         db.close()
 
 
-def update_session_state(session_id: str, chat_history: list = None, status: str = None, completed_at=None, score: float = None):
+def update_session_state(session_id: str, user_id: str, chat_history: list = None, status: str = None, completed_at=None, score: float = None):
     from app.core.database import SessionLocal
     from app.models.models import InterviewSession
     db = SessionLocal()
     try:
-        session = db.query(InterviewSession).filter(InterviewSession.id == session_id).first()
+        session = db.query(InterviewSession).filter(
+            InterviewSession.id == session_id,
+            InterviewSession.user_id == user_id,
+        ).first()
         if session:
             if chat_history is not None:
                 session.chat_history = chat_history
@@ -284,7 +287,7 @@ def _compose_prompt(system_prompt: str, phase_summaries: str, *, conclude: bool,
 
 # ── Feedback Generation ──────────────────────────────────────────────────────
 
-async def _generate_feedback_report(websocket: WebSocket, session_id: str, session_data: dict, role: str, company: str, interview_type: str, provider: str) -> float:
+async def _generate_feedback_report(websocket: WebSocket, session_id: str, user_id: str, session_data: dict, role: str, company: str, interview_type: str, provider: str) -> float:
     """Structured final report grounded in per-phase scores; legacy fallback.
 
     Returns the persisted final score. Sends all feedback frames to the client.
@@ -369,6 +372,7 @@ async def _generate_feedback_report(websocket: WebSocket, session_id: str, sessi
     await asyncio.to_thread(
         update_session_state,
         session_id,
+        user_id,
         chat_history=session_data["history"],
         status="completed",
         completed_at=completed_at_now,
@@ -392,6 +396,7 @@ async def handle_websocket_connection(
     token: str | None,
     type: str,
     provider: str,
+    anonymous_cookie: str | None = None,
     role_level: str = "fresher",
     language: str = "en",
     db: Session = None
@@ -403,7 +408,7 @@ async def handle_websocket_connection(
     from app.core.database import SessionLocal
     temp_db = SessionLocal()
     try:
-        current_user = _get_user_from_token(token, temp_db)
+        current_user = _get_user_from_token(token, temp_db, anonymous_cookie)
         if current_user:
             current_user_id = current_user.id
             current_user_name = current_user.name
@@ -416,6 +421,19 @@ async def handle_websocket_connection(
     if not current_user_id:
         await websocket.close(code=1008)
         return
+
+    if settings.PUBLIC_ANONYMOUS_ACCESS and not settings.AUTH_DISABLED:
+        from app.core.rate_limit import reserve_public_quota
+        import os
+        forwarded_for = websocket.headers.get("x-forwarded-for") if os.getenv("VERCEL") else None
+        client_ip = forwarded_for.split(",", 1)[0].strip() if forwarded_for else (
+            websocket.client.host if websocket.client else "unknown"
+        )
+        try:
+            reserve_public_quota(client_ip, "interview")
+        except HTTPException as exc:
+            await websocket.close(code=1013 if exc.status_code == 429 else 1008)
+            return
 
     await websocket.accept()
     if not _has_interview_provider_key():
@@ -595,7 +613,7 @@ async def handle_websocket_connection(
         session_data["current_phase"] = 1
         session_data["last_question"] = msg_content
 
-        await asyncio.to_thread(update_session_state, session_id, chat_history=session_data["history"])
+        await asyncio.to_thread(update_session_state, session_id, current_user_id, chat_history=session_data["history"])
 
         # Stream complete message for offline/older clients with progress metadata
         first_question_delivered = await _safe_send_json(websocket, {
@@ -627,7 +645,7 @@ async def handle_websocket_connection(
                 continue
 
             session_data["history"].append({"role": "candidate", "content": data})
-            await asyncio.to_thread(update_session_state, session_id, chat_history=session_data["history"])
+            await asyncio.to_thread(update_session_state, session_id, current_user_id, chat_history=session_data["history"])
 
             answered_phase = session_data.get("current_phase", 1)
             last_question = session_data.get("last_question", "")
@@ -804,7 +822,7 @@ async def handle_websocket_connection(
             session_data["question_count"] += 1
             session_data["current_phase"] = asked_phase
             session_data["last_question"] = msg_content
-            await asyncio.to_thread(update_session_state, session_id, chat_history=session_data["history"])
+            await asyncio.to_thread(update_session_state, session_id, current_user_id, chat_history=session_data["history"])
 
             # Send complete message text with progress metadata
             if not await _safe_send_json(websocket, {
@@ -822,7 +840,7 @@ async def handle_websocket_connection(
                 await asyncio.sleep(2)  # Allow time for speech audio to play
 
                 final_score = await _generate_feedback_report(
-                    websocket, session_id, session_data, role, company, type, provider
+                    websocket, session_id, current_user_id, session_data, role, company, type, provider
                 )
                 logger.info(
                     f"[interview] Session completed. final_score={final_score}, "
@@ -848,7 +866,7 @@ async def handle_websocket_connection(
                 tts_worker_task.cancel()
         try:
             if session_data and session_data.get("history"):
-                await asyncio.to_thread(update_session_state, session_id, chat_history=session_data["history"])
+                await asyncio.to_thread(update_session_state, session_id, current_user_id, chat_history=session_data["history"])
         except Exception:
             pass
         try:

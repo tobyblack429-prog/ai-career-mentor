@@ -51,13 +51,19 @@ class Settings:
     BING_SEARCH_API_KEY: str = os.getenv("BING_SEARCH_API_KEY", "")
 
     # ── App ───────────────────────────────────────────────────────────────────
-    APP_ENV: str = os.getenv("APP_ENV", "development")
+    APP_ENV: str = os.getenv("APP_ENV", "production" if os.getenv("VERCEL") else "development")
     DEBUG: bool = APP_ENV == "development"
     AUTH_DISABLED: bool = (
         os.getenv("AUTH_DISABLED", "false").lower() == "true"
         and os.getenv("TESTING", "false").lower() != "true"
         and os.getenv("CI", "false").lower() != "true"
     )
+    # Public deployments can opt into isolated anonymous browser identities.
+    # Disabled by default so existing authentication behavior is unchanged.
+    PUBLIC_ANONYMOUS_ACCESS: bool = os.getenv("PUBLIC_ANONYMOUS_ACCESS", "false").lower() == "true"
+    ANONYMOUS_SESSION_COOKIE: str = "career_anon_session"
+    ANONYMOUS_SESSION_TTL_SECONDS: int = int(os.getenv("ANONYMOUS_SESSION_TTL_SECONDS", str(30 * 24 * 60 * 60)))
+    ANONYMOUS_COOKIE_SAMESITE: str = os.getenv("ANONYMOUS_COOKIE_SAMESITE", "lax").lower()
 
     # ── Observability & RBAC ──────────────────────────────────────────────────
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@example.com")
@@ -67,12 +73,21 @@ class Settings:
         origin.strip()
         for origin in os.getenv(
             "CORS_ORIGINS",
-            "http://localhost:3000,https://ai-career-mentor.vercel.app,https://ai-career-mentor-anil.vercel.app",
+            "http://localhost:3000",
         ).split(",")
         if origin.strip() and origin.strip() != "*"
     ]
 
     def __init__(self):
+        if self.ANONYMOUS_COOKIE_SAMESITE not in {"lax", "strict", "none"}:
+            raise ValueError("ANONYMOUS_COOKIE_SAMESITE must be lax, strict, or none")
+        if self.ANONYMOUS_SESSION_TTL_SECONDS < 60:
+            raise ValueError("ANONYMOUS_SESSION_TTL_SECONDS must be at least 60")
+        if self.PUBLIC_ANONYMOUS_ACCESS and self.AUTH_DISABLED:
+            raise ValueError("PUBLIC_ANONYMOUS_ACCESS and AUTH_DISABLED cannot both be enabled")
+        if self.APP_ENV == "production" and self.AUTH_DISABLED:
+            raise ValueError("AUTH_DISABLED cannot be used in production")
+
         # Resolve relative SQLite URL to absolute project root directory
         if self.DATABASE_URL.startswith("sqlite:///"):
             from pathlib import Path
@@ -92,6 +107,8 @@ class Settings:
                 raise ValueError("CRITICAL: SQLite cannot be used in production! Please set a valid PostgreSQL DATABASE_URL.")
             if self.SECRET_KEY == "dev-secret-change-in-prod":
                 raise ValueError("CRITICAL: SECRET_KEY is still the default placeholder! Generate a strong secret for production.")
+            if self.PUBLIC_ANONYMOUS_ACCESS and not os.getenv("REDIS_URL"):
+                raise ValueError("CRITICAL: REDIS_URL is required for public anonymous access")
 
     def get_llm_config(self, provider: str = None) -> dict:
         """
