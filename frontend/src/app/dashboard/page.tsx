@@ -181,7 +181,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={13} style={{ color: "var(--fg-muted)" }} />
             <span className="text-label">Weekly Engagement</span>
-            <span className="ml-auto text-2xs font-semibold" style={{ color: "var(--brand)" }}>Today: {todayActionCount}</span>
+            <span className="ml-auto text-2xs font-semibold" style={{ color: "var(--brand)" }}>{t(`Today: ${todayActionCount}`)}</span>
           </div>
           <div style={{ height: "200px" }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -328,7 +328,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-mono font-medium text-slate-300 bg-slate-900 px-2.5 py-1 rounded-md border border-slate-800">
-                {FEATURE_LIMIT_CONFIG.reduce((acc, f) => acc + ((usageData[f.key] || 0) >= f.dailyCap ? 1 : (usageData[f.key] || 0)), 0)} / 6 used today
+                {t(`${FEATURE_LIMIT_CONFIG.reduce((acc, f) => acc + ((usageData[f.key] || 0) >= f.dailyCap ? 1 : (usageData[f.key] || 0)), 0)} / 6 used today`)}
               </span>
             </div>
           </div>

@@ -752,6 +752,7 @@ const patternTranslations: Array<[RegExp, (...matches: string[]) => string]> = [
   [/^Analyzed Resume(?:\s+\(Cached\))?$/i, () => "已完成简历分析"],
   [/^Started Mock Interview for\s+(.+)$/i, (role) => `已开始${zhTranslations[role] ?? "其他职位"}模拟面试`],
   [/^Today:\s*(.+)$/i, (value) => `今日：${value}`],
+  [/^(\d+)\s*\/\s*(\d+)\s+used today$/i, (used, limit) => `今日已用 ${used} / ${limit}`],
   [/^Week\s+(\d+)$/i, (week) => `第 ${week} 周`],
   [/^Day\s+(\d+)$/i, (day) => `第 ${day} 天`],
   [/^Step\s+(\d+)\s+of\s+(\d+)$/i, (step, total) => `第 ${step} 步，共 ${total} 步`],

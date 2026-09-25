@@ -15,6 +15,7 @@ openai>=1.30.0
 sqlalchemy>=2.0.0
 alembic>=1.13.0
 psycopg2-binary>=2.9.9
+psycopg[binary]>=3.1.0
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 python-jose[cryptography]>=3.3.0
