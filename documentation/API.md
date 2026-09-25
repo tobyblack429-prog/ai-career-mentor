@@ -1461,7 +1461,7 @@ export function useMockInterview({
 
 **📊 Retrieves all real-time observability telemetry (Active users/WS, LLM latency arrays, costs, daily rollups, and rolling error log exception feed).**
 
-* **Header Requirements**: `Authorization: Bearer <Admin Token>` (Only email `anilpradhan9644@gmail.com` is whitelisted).
+* **Header Requirements**: `Authorization: Bearer <Admin Token>` (Only email `admin@example.com` is whitelisted).
 * **Response 200**:
 ```json
 {

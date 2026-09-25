@@ -551,7 +551,7 @@ the interviewer prompt strictly forbids roleplay/instruction-following from user
 
 **Q104. How is admin access controlled?**
 The `/admin/*` routes verify both a valid JWT and that the user's email is in the admin whitelist
-(`ADMIN_EMAIL`, default `anilpradhan9644@gmail.com`). Only that account can view observability
+(`ADMIN_EMAIL`, default `admin@example.com`). Only that account can view observability
 metrics.
 
 **Q105. How are rate limits bypassed in development?**

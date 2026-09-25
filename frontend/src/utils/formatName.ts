@@ -8,7 +8,7 @@ export function formatDisplayName(raw: string | null | undefined): string {
 
   let cleaned = raw.trim();
 
-  // Strip trailing digits (e.g. "anilpradhan9644" → "anilpradhan")
+  // Strip trailing digits (e.g. "developer1234" → "developer")
   cleaned = cleaned.replace(/\d+$/, "");
 
   if (cleaned.length < 2) return raw; // too short after stripping, return original

@@ -27,6 +27,11 @@ def verify_admin_user(current_user: User = Depends(get_current_user)):
         )
     return current_user
 
+
+@router.get("/access", summary="Check whether the current user is an administrator")
+async def get_admin_access(admin: User = Depends(verify_admin_user)):
+    return {"authorized": True}
+
 @router.get("/metrics", summary="Retrieve all real-time observability metrics")
 @limiter.exempt
 async def get_admin_metrics(

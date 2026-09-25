@@ -44,21 +44,20 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     email_clean = user.email.strip().lower()
-    logger.info(f"Login attempt received for email: '{email_clean}'")
+    logger.info("Login attempt received")
     
     db_user = db.query(User).filter(User.email == email_clean).first()
     if not db_user:
-        logger.warning(f"Login failed: User '{email_clean}' not found in DB.")
+        logger.warning("Login failed: user not found")
         raise HTTPException(status_code=401, detail="Invalid credentials")
         
     if not db_user.hashed_pw:
-        logger.warning(f"Login failed: User '{email_clean}' has no hashed password.")
+        logger.warning("Login failed: user has no password login")
         raise HTTPException(status_code=401, detail="Invalid credentials")
         
     pw_verified = verify_password(user.password, db_user.hashed_pw)
-    logger.info(f"Password verification for '{email_clean}': {pw_verified}")
     if not pw_verified:
-        logger.warning(f"Login failed: Incorrect password for '{email_clean}'.")
+        logger.warning("Login failed: invalid credentials")
         raise HTTPException(status_code=401, detail="Invalid credentials")
         
     return _token_pair(db_user)

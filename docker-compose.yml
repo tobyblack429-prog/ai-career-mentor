@@ -130,7 +130,7 @@ services:
   #     - "5432:5432"
   #   environment:
   #     - POSTGRES_USER=${POSTGRES_USER:-ai_mentor}
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env}
   #     - POSTGRES_DB=${POSTGRES_DB:-ai_career_mentor}
   #   volumes:
   #     - postgres-data:/var/lib/postgresql/data

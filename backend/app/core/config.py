@@ -60,7 +60,7 @@ class Settings:
     )
 
     # ── Observability & RBAC ──────────────────────────────────────────────────
-    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "anilpradhan9644@gmail.com")
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@example.com")
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
     ENABLE_OBSERVABILITY: bool = os.getenv("ENABLE_OBSERVABILITY", "true").lower() == "true"
     CORS_ORIGINS: list[str] = [

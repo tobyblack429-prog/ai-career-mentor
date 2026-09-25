@@ -97,9 +97,10 @@ def test_admin_metrics_endpoint_access_control():
     unauthorized_resp = client.get("/admin/metrics", headers={"Authorization": f"Bearer {normal_token}"})
     assert unauthorized_resp.status_code == 403
     assert "Forbidden" in unauthorized_resp.json()["detail"]
+    assert client.get("/admin/access", headers={"Authorization": f"Bearer {normal_token}"}).status_code == 403
 
     # 3. Register the whitelisted administrator and get access token
-    admin_email = "anilpradhan9644@gmail.com"
+    admin_email = "admin@example.com"
     
     # Delete admin user if exists in DB to prevent registration bad requests
     db = SessionLocal()
@@ -123,6 +124,7 @@ def test_admin_metrics_endpoint_access_control():
     # 4. Assert that admin receives 200 OK and valid telemetry schema
     authorized_resp = client.get("/admin/metrics", headers={"Authorization": f"Bearer {admin_token}"})
     assert authorized_resp.status_code == 200
+    assert client.get("/admin/access", headers={"Authorization": f"Bearer {admin_token}"}).json() == {"authorized": True}
     data = authorized_resp.json()
     assert "active_users" in data
     assert "active_websockets" in data

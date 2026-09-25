@@ -6,7 +6,7 @@ import {
   AlertCircle, Shield, Search, Database, Cpu, Server, Coins,
   Terminal, CheckCircle2, AlertTriangle, Target, MessageSquare,
 } from "lucide-react";
-import { getAdminMetrics } from "@/services/api";
+import { checkAdminAccess, getAdminMetrics } from "@/services/api";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, BarChart, Bar, Legend, LineChart, Line,
@@ -55,14 +55,21 @@ export default function ObservabilityDashboard() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const email = localStorage.getItem("userEmail") || "";
-    if (email.trim().toLowerCase() !== "anilpradhan9644@gmail.com") {
-      toast.error("Unauthorized: Admin access required");
-      router.replace("/dashboard");
-      setAuthorized(false);
-    } else {
-      setAuthorized(true);
-    }
+    let mounted = true;
+    const verify = async () => {
+      try {
+        if (!(await checkAdminAccess())) throw new Error("Admin access denied");
+        if (mounted) setAuthorized(true);
+      } catch {
+        if (!mounted) return;
+        toast.error("Unauthorized: Admin access required");
+        setAuthorized(false);
+        setLoading(false);
+        router.replace("/dashboard");
+      }
+    };
+    void verify();
+    return () => { mounted = false; };
   }, [router]);
 
   const fetchMetrics = async (manual = false) => {

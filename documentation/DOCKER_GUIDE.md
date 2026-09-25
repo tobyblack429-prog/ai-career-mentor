@@ -116,7 +116,7 @@ NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b
 DATABASE_URL=sqlite:///./dev.db
 
 # PostgreSQL (recommended for Docker — uncomment postgres service in docker-compose.yml)
-# DATABASE_URL=postgresql://ai_mentor:secure_password@postgres:5432/ai_career_mentor
+# DATABASE_URL=postgresql://<DB_USER>:<DB_PASSWORD>@postgres:5432/ai_career_mentor
 ```
 
 ### 🔐 **Authentication**
@@ -171,7 +171,7 @@ SENTRY_DSN=
 ENABLE_OBSERVABILITY=true
 
 # Admin whitelist email for /admin/metrics access
-ADMIN_EMAIL=anilpradhan9644@gmail.com
+ADMIN_EMAIL=admin@example.com
 ```
 
 ---
@@ -411,7 +411,7 @@ docker system prune -a --volumes
 To use PostgreSQL locally instead of SQLite, uncomment the `postgres` service in `docker-compose.yml` and update your `.env`:
 
 ```env
-DATABASE_URL=postgresql://ai_mentor:secure_password@postgres:5432/ai_career_mentor
+DATABASE_URL=postgresql://<DB_USER>:<DB_PASSWORD>@postgres:5432/ai_career_mentor
 ```
 
 ---

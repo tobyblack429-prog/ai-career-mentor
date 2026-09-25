@@ -8,6 +8,7 @@ import {
   MessageSquare, BrainCircuit, Settings, Shield,
 } from "lucide-react";
 import { formatDisplayName } from "@/utils/formatName";
+import { checkAdminAccess } from "@/services/api";
 import { useLanguage } from "./LanguageProvider";
 
 const NAV = [
@@ -25,7 +26,7 @@ export default function Sidebar() {
   const { t, locale } = useLanguage();
   const [userName, setUserName] = useState("Local User");
   const [initials, setInitials] = useState("LU");
-  const [userEmail, setUserEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const load = () => {
@@ -38,7 +39,7 @@ export default function Sidebar() {
           : "Local User";
       setUserName(n);
       setInitials(n.slice(0, 2).toUpperCase());
-      setUserEmail(storedEmail);
+      void checkAdminAccess().then(setIsAdmin).catch(() => setIsAdmin(false));
     };
     load();
     window.addEventListener("storage", load);
@@ -95,7 +96,7 @@ export default function Sidebar() {
           );
         })}
 
-        {userEmail === "anilpradhan9644@gmail.com" && (
+        {isAdmin && (
           <Link
             href="/dashboard/admin/observability"
             className="sidebar-nav-link"

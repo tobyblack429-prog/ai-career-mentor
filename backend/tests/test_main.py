@@ -58,6 +58,9 @@ def test_auth_register_login_and_refresh():
     assert logged_in["access_token"]
     assert logged_in["refresh_token"]
 
+    invalid_login = client.post("/auth/login", json={"email": email, "password": "wrong-password"})
+    assert invalid_login.status_code == 401
+
     refresh_response = client.post(
         "/auth/refresh",
         json={"refresh_token": registered["refresh_token"]},

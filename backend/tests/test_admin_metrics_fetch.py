@@ -20,7 +20,7 @@ from app.core.config import settings
 
 def test_pipeline():
     db = SessionLocal()
-    admin_email = "anilpradhan9644@gmail.com"
+    admin_email = "admin@example.com"
     
     # 1. Check if admin user exists, if not create one for testing
     user = db.query(User).filter(User.email == admin_email).first()

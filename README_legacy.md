@@ -1391,7 +1391,7 @@ Ensure these variables are bound in your local configuration files to allow exte
 | **`SERPER_API_KEY`** | ❌ | *(Optional)* | Google Serper search endpoint API key (fallback trends query). |
 | **`REDIS_URL`** | ❌ | `redis://localhost:6379/0` | Connection string targeting local cache or Upstash server. |
 | **`APP_ENV`** | ❌ | `development` | Environment mode control (`development` or `production`). |
-| **`ADMIN_EMAIL`** | ❌ | `anilpradhan9644@gmail.com` | Email address identifying accounts with dashboard admin rights. |
+| **`ADMIN_EMAIL`** | ❌ | `admin@example.com` | Email address identifying accounts with dashboard admin rights. |
 | **`SENTRY_DSN`** | ❌ | *(Optional)* | Telemetry crash-tracking boundary configuration endpoint. |
 | **`ENABLE_OBSERVABILITY`** | ❌ | `true` | System telemetry toggle. Set to false to bypass Redis rollups. |
 
