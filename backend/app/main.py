@@ -21,6 +21,8 @@ from app.api.admin import router as admin_router, verify_admin_user
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from limits.errors import StorageError
+from app.core import rate_limit as quota_store
 from app.core.limiter import limiter
 from app.core.rate_limit import reserve_public_quota
 
@@ -119,6 +121,20 @@ app.add_middleware(
 app.state.limiter = limiter  # Limiter object application state global storage mein register karta hai
 # RateLimitExceeded error aane par custom response structure return karega (client-side error response format)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+def rate_limit_storage_unavailable(request: Request, exc: StorageError):
+    # SlowAPI requires a synchronous handler for errors raised in its middleware.
+    # Fail closed without exposing Redis credentials or backend exception text.
+    logger.warning("Request rate-limit storage unavailable")
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "访问限额服务暂不可用，请稍后再试。"},
+        headers={"Retry-After": "60"},
+    )
+
+
+app.add_exception_handler(StorageError, rate_limit_storage_unavailable)
 app.add_middleware(SlowAPIMiddleware)  # Requests check karne ke liye controller routing limit filter lagata hai
 
 # ── Logging Middleware ────────────────────────────────────────────────────────
@@ -207,29 +223,47 @@ if settings.ENABLE_OBSERVABILITY:
 
 # ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
-async def health(db: Session = Depends(get_db)):
+@limiter.exempt
+def health(db: Session = Depends(get_db)):
     import datetime
     try:
         db.execute(text("SELECT 1"))
         db_status = "connected"
     except Exception as e:
-        logger.error(f"Health Check DB failed: {e}")
+        logger.warning("Health check database unavailable ({})", type(e).__name__)
         db_status = "disconnected"
-    return {
-        "status": "ok",
+
+    redis_status = "not_required"
+    if settings.PUBLIC_ANONYMOUS_ACCESS:
+        redis_status = "disconnected"
+        try:
+            if quota_store.redis_client is not None and quota_store.redis_client.ping():
+                redis_status = "connected"
+        except Exception:
+            logger.warning("Health check public quota storage unavailable")
+
+    ready = db_status == "connected" and redis_status != "disconnected"
+    result = {
+        "status": "ok" if ready else "degraded",
         "database": db_status,
+        "redis": redis_status,
         "service": "AI Career Mentor",
         "version": "1.0.0",
         "provider": "hybrid",
         "model": "hybrid",
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
+    if not ready:
+        return JSONResponse(status_code=503, content=result, headers={"Retry-After": "60"})
+    return result
 
 @app.get("/ping", tags=["Health"])
+@limiter.exempt
 async def ping():
-    """Lightweight keep-alive for Render free tier cron."""
+    """Liveness probe; dependency readiness is reported separately by /health."""
     return {"pong": True}
 
 @app.get("/", tags=["Health"])
+@limiter.exempt
 async def root():
     return {"message": "Welcome to AI Career Mentor API 🚀", "docs": "/docs", "health": "/health"}

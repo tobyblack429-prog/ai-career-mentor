@@ -11,8 +11,17 @@ _redis_url = os.getenv("REDIS_URL", "memory://")
 if settings.DEBUG or os.getenv("APP_ENV") == "development":
     _redis_url = "memory://"
 
+_storage_options = {}
+if _redis_url.startswith(("redis://", "rediss://", "redis+unix://")):
+    _storage_options = {
+        "socket_connect_timeout": 3,
+        "socket_timeout": 3,
+        "wrap_exceptions": True,
+    }
+
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=_limit_rules,
     storage_uri=_redis_url,
+    storage_options=_storage_options,
 )
