@@ -3,16 +3,21 @@
 from unittest.mock import Mock
 
 import pytest
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from limits.errors import StorageError
 from redis.exceptions import ConnectionError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.api import roadmap
 from app.core import rate_limit
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.limiter import limiter
-from app.main import app
+from app.core.limiter import CompatibleSlowAPIMiddleware, limiter
+from app.main import app, rate_limit_storage_unavailable
 
 
 @pytest.fixture
@@ -106,3 +111,78 @@ def test_public_quota_outage_cannot_reach_ai(client, monkeypatch):
     assert response.status_code == 503
     assert response.json()["detail"] == "公开服务限额暂不可用，请稍后再试。"
     generate.assert_not_called()
+
+
+def _nested_probe_app():
+    probe = FastAPI()
+    request_limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=["100/hour"],
+        storage_uri="memory://",
+        headers_enabled=True,
+    )
+    probe.state.limiter = request_limiter
+    probe.add_exception_handler(StorageError, rate_limit_storage_unavailable)
+    probe.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    probe.add_middleware(CompatibleSlowAPIMiddleware)
+    inner = APIRouter()
+
+    @inner.get("/plain")
+    def plain():
+        return {"ok": True}
+
+    @inner.get("/decorated")
+    @request_limiter.limit("10/hour")
+    def decorated(request: Request):
+        return JSONResponse({"ok": True})
+
+    outer = APIRouter()
+    outer.include_router(inner, prefix="/inner")
+    probe.include_router(outer, prefix="/outer")
+    return TestClient(probe), request_limiter
+
+
+def test_nested_included_routers_still_fail_closed(monkeypatch):
+    client, request_limiter = _nested_probe_app()
+
+    def fail(*args, **kwargs):
+        raise StorageError(ConnectionError("simulated storage outage"))
+
+    hit = Mock(side_effect=fail)
+    monkeypatch.setattr(request_limiter._limiter, "hit", hit)
+    assert client.get("/outer/inner/plain").status_code == 503
+    assert hit.call_count == 1
+    assert client.get("/plain").status_code == 404
+    assert client.post("/outer/inner/plain").status_code == 405
+    assert hit.call_count == 1
+
+
+def test_nested_routes_preserve_success_headers_and_decorator_checks(monkeypatch):
+    client, request_limiter = _nested_probe_app()
+    hit = Mock(wraps=request_limiter._limiter.hit)
+    monkeypatch.setattr(request_limiter._limiter, "hit", hit)
+    response = client.get("/outer/inner/plain")
+    assert response.status_code == 200
+    assert response.headers["x-ratelimit-limit"] == "100"
+    assert hit.call_count == 1
+    hit.reset_mock()
+    response = client.get("/outer/inner/decorated")
+    assert response.status_code == 200
+    assert response.headers["x-ratelimit-limit"] == "10"
+    assert hit.call_count == 1
+
+
+def test_later_overlapping_exemption_cannot_bypass_first_route(monkeypatch):
+    client, request_limiter = _nested_probe_app()
+
+    @client.app.get("/outer/inner/plain")
+    @request_limiter.exempt
+    def later_exempt_route():
+        return {"wrong_route": True}
+
+    def fail(*args, **kwargs):
+        raise StorageError(ConnectionError("simulated storage outage"))
+
+    monkeypatch.setattr(request_limiter._limiter, "hit", fail)
+    response = client.get("/outer/inner/plain")
+    assert response.status_code == 503

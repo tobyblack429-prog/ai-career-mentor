@@ -20,10 +20,9 @@ from app.api.admin import router as admin_router, verify_admin_user
 
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from limits.errors import StorageError
 from app.core import rate_limit as quota_store
-from app.core.limiter import limiter
+from app.core.limiter import CompatibleSlowAPIMiddleware, limiter
 from app.core.rate_limit import reserve_public_quota
 
 from app.core.resume.rag_service import rag_engine
@@ -135,7 +134,7 @@ def rate_limit_storage_unavailable(request: Request, exc: StorageError):
 
 
 app.add_exception_handler(StorageError, rate_limit_storage_unavailable)
-app.add_middleware(SlowAPIMiddleware)  # Requests check karne ke liye controller routing limit filter lagata hai
+app.add_middleware(CompatibleSlowAPIMiddleware)
 
 # ── Logging Middleware ────────────────────────────────────────────────────────
 # Custom decorator: Har request call par run hoga and logs metrics aur errors monitor karega

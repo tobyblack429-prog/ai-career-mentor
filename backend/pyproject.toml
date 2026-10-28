@@ -25,6 +25,7 @@ dependencies = [
     "edge-tts>=7.0.0",
     "loguru>=0.7.0",
     "slowapi>=0.1.9",
+    "limits>=5.8.0",
     "redis>=5.0.0",
     "sentry-sdk[fastapi]>=2.0.0",
     "prometheus-fastapi-instrumentator>=7.0.0"
